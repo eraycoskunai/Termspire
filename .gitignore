@@ -1,0 +1,17 @@
+node_modules
+out
+dist
+dist-electron
+release
+build
+*.log
+.DS_Store
+.env
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
