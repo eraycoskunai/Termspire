@@ -1,5 +1,10 @@
 # 🗼 Termspire
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+![Electron](https://img.shields.io/badge/Electron-43-9feaf9?logo=electron&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
+
 > Your command tower for terminals and agents.
 
 Tek bir pencerede birden fazla bağımsız terminal oturumunu **ve** AI kodlama
@@ -299,6 +304,14 @@ Termspire'ı farklılaştıran, tek bir pencerede birleşen şu katmanlar:
 
 ## Kurulum
 
+### Son kullanıcı (indirilebilir sürüm)
+
+Kaynak koduyla uğraşmak istemiyorsanız [Releases](../../releases) sayfasından
+işletim sisteminize uygun kurulum dosyasını indirip çalıştırabilirsiniz
+(Windows: `.exe` installer, macOS: `.dmg`, Linux: `.AppImage`).
+
+### Geliştirici (kaynak koddan)
+
 ```bash
 npm install
 ```
@@ -493,3 +506,25 @@ patches/                      # node-pty Windows derleme yaması
   tepsi menüsündeki "Çıkış" ile tamamen kapatıp yeniden başlatmanız gerekir
   (pencereyi ✕ ile kapatmak yeterli değildir, çünkü artık sadece tepsiye
   küçülür).
+
+## Katkıda Bulunma
+
+Katkılar memnuniyetle karşılanır! Bir özellik eklemeden veya büyük bir
+değişiklik yapmadan önce ne yapmak istediğinizi bir issue'da açmanız,
+üzerinde çalışırken çakışmaları önler. Genel akış:
+
+1. Depoyu fork'layın ve yeni bir branch açın.
+2. Değişikliğinizi yapın; göndermeden önce yerelde şunları çalıştırın:
+   ```bash
+   npm run typecheck
+   npm run lint
+   npm run format
+   ```
+3. Anlaşılır bir commit mesajıyla bir Pull Request açın.
+
+Hata bildirimleri için lütfen işletim sisteminizi, Node.js sürümünüzü ve
+mümkünse tekrar üretme adımlarını issue'ya ekleyin.
+
+## Lisans
+
+Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
