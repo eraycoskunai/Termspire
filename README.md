@@ -1,5 +1,8 @@
 # 🗼 Termspire
 
+<img width="1525" height="978" alt="image" src="https://github.com/user-attachments/assets/a78ae809-2982-4aa7-a9da-028b20e6bc25" />
+
+
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![Electron](https://img.shields.io/badge/Electron-43-9feaf9?logo=electron&logoColor=white)
