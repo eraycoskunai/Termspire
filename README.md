@@ -1,5 +1,5 @@
 <h1>
-  <img width="1280" height="1280" alt="image" src="https://github.com/user-attachments/assets/cc8f038d-c5e1-410e-9f8d-813c76eaf909" />
+  <img width="40" alt="Termspire logo" src="https://github.com/user-attachments/assets/cc8f038d-c5e1-410e-9f8d-813c76eaf909" />
   Termspire
 </h1>
 
