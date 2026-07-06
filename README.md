@@ -1,4 +1,5 @@
-# 🗼 Termspire
+# <img width="1280" height="1280" alt="image" src="https://github.com/user-attachments/assets/8e11fb14-fde4-4f1d-9539-8c1df2c06cc4" />
+ Termspire
 
 <img width="1525" height="978" alt="image" src="https://github.com/user-attachments/assets/a78ae809-2982-4aa7-a9da-028b20e6bc25" />
 
