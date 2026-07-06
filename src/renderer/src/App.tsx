@@ -28,6 +28,7 @@ import { defaultShellForPlatform } from './lib/shellMeta'
 import { getPtyInstanceId } from './lib/ptyRegistry'
 import { flushAllPaneBuffers } from './lib/flushRegistry'
 import { playHackerActivateSound, playHackerDeactivateSound } from './lib/hackerSound'
+import { useT } from './hooks/useTranslation'
 
 const SCHEDULE_TICK_MS = 20000
 
@@ -38,6 +39,7 @@ function cx(...classes: Array<string | false | null | undefined>): string {
 }
 
 function App(): React.JSX.Element {
+  const t = useT()
   const workspaceOrder = useWorkspaceStore((state) => state.workspaceOrder)
   const activeWorkspaceId = useWorkspaceStore((state) => state.activeWorkspaceId)
   const addPane = useWorkspaceStore((state) => state.addPane)
@@ -241,11 +243,11 @@ function App(): React.JSX.Element {
           <div className="group fixed right-0 top-0 z-50 h-6 w-40">
             <button
               type="button"
-              title="Sunum modundan çık (Ctrl+Shift+K / F11)"
+              title={t('app.exitKioskTitle')}
               onClick={toggleKioskMode}
               className="absolute right-2 top-2 rounded-md border border-[var(--mtf-border)] bg-[var(--mtf-surface)] px-2.5 py-1 text-xs text-[var(--mtf-text-muted)] opacity-0 shadow-lg transition-opacity hover:text-[var(--mtf-text)] group-hover:opacity-100"
             >
-              ⤢ Sunum modundan çık
+              ⤢ {t('app.exitKiosk')}
             </button>
           </div>
         )}

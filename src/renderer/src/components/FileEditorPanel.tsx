@@ -6,6 +6,7 @@ import { oneDark } from '@codemirror/theme-one-dark'
 import { unifiedMergeView } from '@codemirror/merge'
 import { getLanguageExtension, isImageFile } from '../lib/codeLangForFile'
 import type { ThemeMode } from '../state/useUiStore'
+import { useT } from '../hooks/useTranslation'
 
 function cx(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(' ')
@@ -41,6 +42,7 @@ function FileEditorPanel({
   onClose,
   onDirtyChange
 }: FileEditorPanelProps): React.JSX.Element {
+  const t = useT()
   const containerRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const originalContentRef = useRef<string>('')
@@ -76,7 +78,7 @@ function FileEditorPanel({
       setTimeout(() => setSaveStatus((current) => (current === 'saved' ? 'idle' : current)), 1500)
     } else {
       setSaveStatus('idle')
-      window.alert(`Kaydedilemedi: ${result.error}`)
+      window.alert(t('fileEditor.saveFailed', { error: result.error ?? '' }))
     }
   }
   saveRef.current = handleSave
@@ -114,7 +116,7 @@ function FileEditorPanel({
         if (disposed) return
         setLoading(false)
         if (result.ok && result.dataUrl) setImageDataUrl(result.dataUrl)
-        else setError(result.error ?? 'Görsel yüklenemedi.')
+        else setError(result.error ?? t('fileEditor.imageLoadFailed'))
       })
       return () => {
         disposed = true
@@ -125,7 +127,7 @@ function FileEditorPanel({
       if (disposed) return
       setLoading(false)
       if (!result.ok || result.content === undefined) {
-        setError(result.error ?? 'Dosya metin olarak açılamadı.')
+        setError(result.error ?? t('fileEditor.textOpenFailed'))
         return
       }
       originalContentRef.current = result.content
@@ -143,6 +145,10 @@ function FileEditorPanel({
     return () => {
       disposed = true
     }
+    // `t` kasıtlı olarak bağımlılıklara eklenmiyor: dil değişiminde bu effect'in
+    // yeniden çalışması dosyayı diskten sıfırdan okur ve kaydedilmemiş
+    // değişiklikleri sessizce kaybettirirdi — sadece dosya değiştiğinde çalışmalı.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filePath, fileName])
 
   // Container div, `pendingText` set edildiği render'da (loading=false, error=null,
@@ -229,18 +235,20 @@ function FileEditorPanel({
           {fileName}
         </span>
         {isDirty && (
-          <span title="Kaydedilmemiş değişiklik var" className="shrink-0 text-amber-400">
+          <span title={t('fileEditor.dirty')} className="shrink-0 text-amber-400">
             ●
           </span>
         )}
         {saveStatus === 'saving' && (
-          <span className="shrink-0 text-[var(--mtf-text-muted)]">Kaydediliyor…</span>
+          <span className="shrink-0 text-[var(--mtf-text-muted)]">{t('fileEditor.saving')}</span>
         )}
-        {saveStatus === 'saved' && <span className="shrink-0 text-emerald-400">Kaydedildi ✓</span>}
+        {saveStatus === 'saved' && (
+          <span className="shrink-0 text-emerald-400">{t('fileEditor.saved')}</span>
+        )}
         {!isImage && !error && diffAvailable && (
           <button
             type="button"
-            title="Git HEAD'e göre değişiklikleri satır satır göster"
+            title={t('fileEditor.diffTitle')}
             onClick={() => setShowDiff((value) => !value)}
             className={cx(
               'shrink-0 rounded px-2 py-0.5 text-[11px] font-medium',
@@ -249,13 +257,13 @@ function FileEditorPanel({
                 : 'bg-[var(--mtf-surface-2)] text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]'
             )}
           >
-            ⇄ Diff
+            {t('fileEditor.diff')}
           </button>
         )}
         {!isImage && !error && (
           <button
             type="button"
-            title="Kaydet (Ctrl+S)"
+            title={t('fileEditor.saveTitle')}
             onClick={() => void handleSave()}
             disabled={!isDirty}
             className={cx(
@@ -265,12 +273,12 @@ function FileEditorPanel({
                 : 'cursor-not-allowed bg-[var(--mtf-surface-2)] text-[var(--mtf-text-muted)]'
             )}
           >
-            Kaydet
+            {t('fileEditor.save')}
           </button>
         )}
         <button
           type="button"
-          title="OS dosya gezgininde göster"
+          title={t('fileEditor.revealInOs')}
           onClick={() => void window.api.fs.reveal(filePath)}
           className="shrink-0 rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
         >
@@ -278,7 +286,7 @@ function FileEditorPanel({
         </button>
         <button
           type="button"
-          title="Kapat"
+          title={t('fileEditor.close')}
           onClick={onClose}
           className="shrink-0 rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-red-900/60 hover:text-red-200"
         >
@@ -288,7 +296,7 @@ function FileEditorPanel({
       <div className="min-h-0 flex-1 overflow-hidden">
         {loading && (
           <div className="flex h-full items-center justify-center text-xs text-[var(--mtf-text-muted)]">
-            Yükleniyor…
+            {t('fileEditor.loading')}
           </div>
         )}
         {!loading && error && (
@@ -299,7 +307,7 @@ function FileEditorPanel({
               onClick={() => void window.api.fs.openPath(filePath)}
               className="rounded bg-[var(--mtf-surface-2)] px-3 py-1.5 text-[var(--mtf-text)] hover:bg-[var(--mtf-hover)]"
             >
-              OS uygulamasıyla aç
+              {t('fileEditor.openWithOs')}
             </button>
           </div>
         )}

@@ -17,6 +17,7 @@ import type { ThemeMode } from '../state/useUiStore'
 import StatusIndicator from './StatusIndicator'
 import ScheduleButton from './ScheduleButton'
 import SessionReplayPanel from './SessionReplayPanel'
+import { useT } from '../hooks/useTranslation'
 import '@xterm/xterm/css/xterm.css'
 
 function cx(...classes: Array<string | false | null | undefined>): string {
@@ -173,6 +174,9 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
   },
   ref
 ) {
+  const t = useT()
+  const tRef = useRef(t)
+  tRef.current = t
   const containerRef = useRef<HTMLDivElement>(null)
   const shellMeta = getShellMeta(config.shell)
   const titleRef = useRef(title)
@@ -212,13 +216,13 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
       onStatusChangeRef.current?.(next)
       if (next === 'waiting') {
         window.api.notifications.show({
-          title: `${titleRef.current} onay bekliyor`,
-          body: 'Terminal bir işlem için onayınızı veya girişinizi bekliyor.'
+          title: tRef.current('terminalPane.waitingNotifTitle', { title: titleRef.current }),
+          body: tRef.current('terminalPane.waitingNotifBody')
         })
       } else if (next === 'error') {
         window.api.notifications.show({
-          title: `${titleRef.current} hata verdi`,
-          body: 'Terminal çıktısında bir hata tespit edildi.'
+          title: tRef.current('terminalPane.errorNotifTitle', { title: titleRef.current }),
+          body: tRef.current('terminalPane.errorNotifBody')
         })
       }
     }
@@ -379,9 +383,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
           if (disposed) return
           if (result.ok) {
             if (result.catchUp) term.write(result.catchUp)
-            term.write(
-              '\r\n\x1b[2m── canlı oturuma yeniden bağlanıldı (işlem kesintisiz çalışıyor) ──\x1b[0m\r\n'
-            )
+            term.write(`\r\n\x1b[2m${tRef.current('terminalPane.reattached')}\x1b[0m\r\n`)
             markRunning()
             scheduleStabilityReset()
             return
@@ -390,12 +392,10 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
           // IPC başarısız oldu; aşağıda normal spawn akışına düşülür.
         }
         term.write(
-          '\r\n\x1b[33m(önceki işlem bu arada kendi kendine sonlanmış; yeni bir işlem başlatılıyor)\x1b[0m\r\n'
+          `\r\n\x1b[33m${tRef.current('terminalPane.reattachFailedRestarting')}\x1b[0m\r\n`
         )
       } else if (savedBuffer) {
-        term.write(
-          '\r\n\x1b[2m── önceki oturumdan devam ediliyor (işlem yeniden başlatılıyor) ──\x1b[0m\r\n'
-        )
+        term.write(`\r\n\x1b[2m${tRef.current('terminalPane.resumingSession')}\x1b[0m\r\n`)
       }
 
       try {
@@ -406,7 +406,9 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
       } catch (error) {
         if (disposed) return
         reportCreateError()
-        term.write(`\r\n\x1b[31mHata: ${(error as Error).message}\x1b[0m\r\n`)
+        term.write(
+          `\r\n\x1b[31m${tRef.current('terminalPane.createError', { message: (error as Error).message })}\x1b[0m\r\n`
+        )
       }
     }
     void initPane()
@@ -428,7 +430,9 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
       if (payload.id !== ptyInstanceId || disposed) return
       if (stabilityTimer) clearTimeout(stabilityTimer)
       reportExit(payload.exitCode)
-      term.write(`\r\n\r\n[process exited with code ${payload.exitCode}]\r\n`)
+      term.write(
+        `\r\n\r\n${tRef.current('terminalPane.exitedWithCode', { code: payload.exitCode })}\r\n`
+      )
       // Aşama 10/14: "otomatik yeniden başlat" açıksa ve process beklenmedik
       // şekilde (exit code != 0) sonlandıysa pane yeniden başlatılır. Art arda
       // çöken bir process için sabit 1sn gecikme yerine üstel backoff (1-2-4-
@@ -439,21 +443,19 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
       if (payload.exitCode !== 0 && autoRestartRef.current) {
         const decision = recordCrashAndDecide(paneId)
         if (decision.exceeded) {
-          term.write(
-            '\x1b[31m[crash-loop koruması: çok kısa sürede çok fazla çökme tespit edildi, otomatik yeniden başlatma durduruldu]\x1b[0m\r\n'
-          )
+          term.write(`\x1b[31m${tRef.current('terminalPane.crashLoopStopped')}\x1b[0m\r\n`)
           window.api.notifications.show({
-            title: `${titleRef.current}: otomatik yeniden başlatma durduruldu`,
-            body: 'Kısa sürede çok fazla çökme tespit edildi (crash-loop). Sorunu inceleyip manuel olarak yeniden başlatın.'
+            title: tRef.current('terminalPane.crashLoopNotifTitle', { title: titleRef.current }),
+            body: tRef.current('terminalPane.crashLoopNotifBody')
           })
           onToggleAutoRestartRef.current?.()
         } else {
           const backoffLabel =
             decision.backoffMs >= 1000
-              ? `${(decision.backoffMs / 1000).toFixed(decision.backoffMs % 1000 === 0 ? 0 : 1)}sn`
+              ? `${(decision.backoffMs / 1000).toFixed(decision.backoffMs % 1000 === 0 ? 0 : 1)}${tRef.current('common.secondsShort')}`
               : `${decision.backoffMs}ms`
           term.write(
-            `\x1b[33m[otomatik yeniden başlatılıyor… (${backoffLabel} sonra, deneme ${decision.crashCount})]\x1b[0m\r\n`
+            `\x1b[33m${tRef.current('terminalPane.autoRestarting', { delay: backoffLabel, count: decision.crashCount })}\x1b[0m\r\n`
           )
           setTimeout(() => onRestartRef.current?.(), decision.backoffMs)
         }
@@ -567,8 +569,11 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
             setIsResourceAlarm(true)
             const memoryMb = Math.round(next.memory / (1024 * 1024))
             window.api.notifications.show({
-              title: `${titleRef.current}: yüksek kaynak kullanımı`,
-              body: `CPU %${Math.round(next.cpu)} · RAM ${memoryMb} MB — sürdürülebilir şekilde eşik üstünde, "runaway process" olabilir.`
+              title: tRef.current('terminalPane.resourceAlarmTitle', { title: titleRef.current }),
+              body: tRef.current('terminalPane.resourceAlarmBody', {
+                cpu: Math.round(next.cpu),
+                memory: memoryMb
+              })
             })
             onResourceAlarmRef.current?.(next)
           }
@@ -649,8 +654,8 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
             <span
               title={
                 isResourceAlarm
-                  ? 'Kaynak alarmı: CPU/RAM sürdürülebilir şekilde yüksek ("runaway process" olabilir)'
-                  : 'Anlık CPU / bellek kullanımı'
+                  ? t('terminalPane.usageAlarmTitle')
+                  : t('terminalPane.usageTitle')
               }
               className={cx(
                 'shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px]',
@@ -666,21 +671,21 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
         </div>
         {status === 'waiting' && (
           <div
-            title="Hızlı yanıt gönder"
+            title={t('terminalPane.quickReplyHint')}
             onPointerDown={(event) => event.stopPropagation()}
             className="flex shrink-0 items-center gap-1"
           >
             <button
               type="button"
-              title="Onayla (Enter gönder)"
+              title={t('terminalPane.approveTitle')}
               onClick={() => sendQuickInput('\r')}
               className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 hover:bg-amber-500/25"
             >
-              ↵ Onayla
+              {t('terminalPane.approve')}
             </button>
             <button
               type="button"
-              title="Evet (y + Enter gönder)"
+              title={t('terminalPane.yesTitle')}
               onClick={() => sendQuickInput('y\r')}
               className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 hover:bg-amber-500/25"
             >
@@ -688,7 +693,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
             </button>
             <button
               type="button"
-              title="Hayır (n + Enter gönder)"
+              title={t('terminalPane.noTitle')}
               onClick={() => sendQuickInput('n\r')}
               className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-300 hover:bg-amber-500/25"
             >
@@ -698,7 +703,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
         )}
         {pipeOptions && pipeOptions.length > 0 && (
           <select
-            title="Çıktıyı canlı olarak başka bir pane'in girdisine ak"
+            title={t('terminalPane.pipeTitle')}
             value={pipeTargetId ?? ''}
             onChange={(event) => onSetPipeTarget?.(event.target.value || null)}
             onPointerDown={(event) => event.stopPropagation()}
@@ -709,7 +714,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
                 : 'border-[var(--mtf-border)] text-[var(--mtf-text-muted)]'
             )}
           >
-            <option value="">🔗 Yok</option>
+            <option value="">{t('terminalPane.pipeNone')}</option>
             {pipeOptions.map((option) => (
               <option key={option.id} value={option.id}>
                 🔗 {option.title}
@@ -719,7 +724,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
         )}
         {showBroadcastToggle && (
           <label
-            title="Broadcast grubuna dahil et"
+            title={t('terminalPane.broadcastIncludeHint')}
             onPointerDown={(event) => event.stopPropagation()}
             className="flex shrink-0 items-center gap-1 rounded px-1 text-[10px] text-[var(--mtf-text-muted)]"
           >
@@ -729,14 +734,14 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
               onChange={onToggleBroadcastTarget}
               className="h-3 w-3 accent-blue-500"
             />
-            Yayın
+            {t('terminalPane.broadcastLabel')}
           </label>
         )}
         <div className="flex shrink-0 items-center gap-1">
           <ScheduleButton paneId={paneId} paneTitle={title} />
           <button
             type="button"
-            title="Oturum geçmişi / replay — bu pane'in geçmişte ne yaptığını izle"
+            title={t('terminalPane.replayHint')}
             onClick={() => setIsReplayOpen(true)}
             className="rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
           >
@@ -747,8 +752,8 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
               type="button"
               title={
                 autoRestart
-                  ? 'Otomatik yeniden başlatma: açık (çökerse otomatik başlar)'
-                  : 'Otomatik yeniden başlatma: kapalı'
+                  ? t('terminalPane.autoRestartOn')
+                  : t('terminalPane.autoRestartOff')
               }
               onClick={onToggleAutoRestart}
               className={cx(
@@ -764,7 +769,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
           {onRestart && (
             <button
               type="button"
-              title="Yeniden başlat"
+              title={t('terminalPane.restart')}
               onClick={onRestart}
               className="rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
             >
@@ -774,7 +779,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
           {onToggleZoom && (
             <button
               type="button"
-              title={isZoomed ? 'Grid görünümüne dön' : 'Yakınlaştır'}
+              title={isZoomed ? t('terminalPane.zoomOut') : t('terminalPane.zoomIn')}
               onClick={onToggleZoom}
               className="rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
             >
@@ -784,7 +789,7 @@ const TerminalPane = forwardRef<TerminalPaneHandle, TerminalPaneProps>(function 
           {onClose && (
             <button
               type="button"
-              title="Kapat"
+              title={t('terminalPane.close')}
               onClick={onClose}
               className="rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-red-900/60 hover:text-red-200"
             >

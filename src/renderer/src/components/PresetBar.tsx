@@ -3,6 +3,7 @@ import type { PersistedPaneConfig } from '@shared/types'
 import { usePresetStore } from '../state/usePresetStore'
 import { useWorkspaceStore } from '../state/useWorkspaceStore'
 import { chunkIntoRows, computeGridDimensions } from '../lib/gridAlgorithm'
+import { useT } from '../hooks/useTranslation'
 
 /** Aşama 10: preset pilinin solunda gösterilen, pane sayısı/renklerini yansıtan mini grid önizlemesi. */
 function PresetThumbnail({ panes }: { panes: PersistedPaneConfig[] }): React.JSX.Element {
@@ -34,6 +35,7 @@ function PresetThumbnail({ panes }: { panes: PersistedPaneConfig[] }): React.JSX
  * spawn ederek yeni bir workspace olarak açar ("tek tıkla aç").
  */
 function PresetBar(): React.JSX.Element {
+  const t = useT()
   const presets = usePresetStore((state) => state.presets)
   const load = usePresetStore((state) => state.load)
   const savePreset = usePresetStore((state) => state.savePreset)
@@ -85,9 +87,9 @@ function PresetBar(): React.JSX.Element {
 
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto border-b border-[var(--mtf-border)] bg-[var(--mtf-bg)] px-2 py-1.5 text-xs">
-      <span className="shrink-0 text-[var(--mtf-text-muted)]">Presetler:</span>
+      <span className="shrink-0 text-[var(--mtf-text-muted)]">{t('presetBar.label')}</span>
       {presets.length === 0 && !isNaming && (
-        <span className="shrink-0 text-[var(--mtf-text-muted)]">henüz yok</span>
+        <span className="shrink-0 text-[var(--mtf-text-muted)]">{t('presetBar.none')}</span>
       )}
       {presets.map((preset) => (
         <div
@@ -97,7 +99,7 @@ function PresetBar(): React.JSX.Element {
           <PresetThumbnail panes={preset.panes} />
           <button
             type="button"
-            title={`${preset.name} (${preset.panes.length} pane) — yeni workspace olarak aç`}
+            title={t('presetBar.openHint', { name: preset.name, count: preset.panes.length })}
             onClick={() => handleApplyPreset(preset.id)}
             className="max-w-[8rem] truncate hover:text-blue-400"
           >
@@ -106,7 +108,7 @@ function PresetBar(): React.JSX.Element {
           <span className="text-[var(--mtf-text-muted)]">{preset.panes.length}</span>
           <button
             type="button"
-            title="Preseti sil"
+            title={t('presetBar.deleteHint')}
             onClick={() => removePreset(preset.id)}
             className="rounded px-1 text-[var(--mtf-text-muted)] opacity-0 hover:bg-red-900/60 hover:text-red-200 group-hover:opacity-100"
           >
@@ -124,7 +126,7 @@ function PresetBar(): React.JSX.Element {
               if (event.key === 'Enter') handleSaveCurrent()
               if (event.key === 'Escape') setIsNaming(false)
             }}
-            placeholder={activeWorkspace?.name ?? 'Preset adı'}
+            placeholder={activeWorkspace?.name ?? t('presetBar.namePlaceholder')}
             className="w-32 rounded border border-[var(--mtf-border)] bg-[var(--mtf-surface)] px-2 py-1 text-[var(--mtf-text)] outline-none focus:border-blue-500"
           />
           <button
@@ -132,25 +134,25 @@ function PresetBar(): React.JSX.Element {
             onClick={handleSaveCurrent}
             className="rounded bg-blue-600 px-2 py-1 text-white hover:bg-blue-500"
           >
-            Kaydet
+            {t('presetBar.save')}
           </button>
           <button
             type="button"
             onClick={() => setIsNaming(false)}
             className="rounded px-2 py-1 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]"
           >
-            İptal
+            {t('presetBar.cancel')}
           </button>
         </div>
       ) : (
         <button
           type="button"
-          title="Aktif workspace'in pane setini preset olarak kaydet"
+          title={t('presetBar.saveCurrentHint')}
           disabled={!activeWorkspaceId || (activeWorkspace?.order.length ?? 0) === 0}
           onClick={() => setIsNaming(true)}
           className="shrink-0 rounded-full border border-dashed border-[var(--mtf-border)] px-2.5 py-1 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          + Preset kaydet
+          {t('presetBar.saveCurrent')}
         </button>
       )}
     </div>

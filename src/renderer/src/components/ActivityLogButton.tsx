@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useActivityStore } from '../state/useActivityStore'
 import { useWorkspaceStore } from '../state/useWorkspaceStore'
+import { useT, type TFunction } from '../hooks/useTranslation'
 
-function formatRelativeTime(timestamp: number): string {
+function formatRelativeTime(timestamp: number, t: TFunction): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000)
-  if (diffSec < 5) return 'şimdi'
-  if (diffSec < 60) return `${diffSec}sn önce`
+  if (diffSec < 5) return t('activityLog.timeNow')
+  if (diffSec < 60) return t('activityLog.timeSecAgo', { n: diffSec })
   const diffMin = Math.floor(diffSec / 60)
-  if (diffMin < 60) return `${diffMin}dk önce`
+  if (diffMin < 60) return t('activityLog.timeMinAgo', { n: diffMin })
   const diffHour = Math.floor(diffMin / 60)
-  return `${diffHour}sa önce`
+  return t('activityLog.timeHourAgo', { n: diffHour })
 }
 
 /**
@@ -18,6 +19,7 @@ function formatRelativeTime(timestamp: number): string {
  * Bir satıra tıklamak, o olayın gerçekleştiği workspace'e geçer.
  */
 function ActivityLogButton(): React.JSX.Element {
+  const t = useT()
   const entries = useActivityStore((state) => state.entries)
   const clear = useActivityStore((state) => state.clear)
   const setActiveWorkspace = useWorkspaceStore((state) => state.setActiveWorkspace)
@@ -50,7 +52,7 @@ function ActivityLogButton(): React.JSX.Element {
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        title="Aktivite geçmişi (onay/hata olayları)"
+        title={t('activityLog.title')}
         onClick={() => setIsOpen((value) => !value)}
         className={
           'relative rounded-md border px-2.5 py-1.5 text-xs font-medium ' +
@@ -69,17 +71,17 @@ function ActivityLogButton(): React.JSX.Element {
       {isOpen && (
         <div className="absolute right-0 top-full z-50 mt-1 w-72 rounded-md border border-[var(--mtf-border)] bg-[var(--mtf-surface)] p-1.5 text-xs shadow-xl">
           <div className="flex items-center justify-between px-1 pb-1">
-            <span className="font-medium text-[var(--mtf-text)]">Aktivite geçmişi</span>
+            <span className="font-medium text-[var(--mtf-text)]">{t('activityLog.heading')}</span>
             <button
               type="button"
               onClick={clear}
               className="text-[var(--mtf-text-muted)] hover:text-[var(--mtf-text)]"
             >
-              Temizle
+              {t('activityLog.clear')}
             </button>
           </div>
           {entries.length === 0 ? (
-            <p className="px-1 py-2 text-[var(--mtf-text-muted)]">Henüz olay yok.</p>
+            <p className="px-1 py-2 text-[var(--mtf-text-muted)]">{t('activityLog.empty')}</p>
           ) : (
             <div className="max-h-72 overflow-y-auto">
               {entries.map((entry) => {
@@ -106,7 +108,7 @@ function ActivityLogButton(): React.JSX.Element {
                       <span className="text-[var(--mtf-text-muted)]"> · {workspaceName}</span>
                     </span>
                     <span className="shrink-0 text-[var(--mtf-text-muted)]">
-                      {formatRelativeTime(entry.timestamp)}
+                      {formatRelativeTime(entry.timestamp, t)}
                     </span>
                   </button>
                 )

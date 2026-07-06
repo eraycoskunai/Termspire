@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useWorkspaceStore } from '../state/useWorkspaceStore'
 import { getPtyInstanceId } from '../lib/ptyRegistry'
+import { useT } from '../hooks/useTranslation'
 
 /**
  * Aşama 14: çoklu-ajan onay orkestratörü. Status motoru zaten her pane için
@@ -13,6 +14,7 @@ import { getPtyInstanceId } from '../lib/ptyRegistry'
  * bu çubuk gösterilmez — sadece gerçekten "orkestrasyon" gereken durumda çıkar.
  */
 function ApprovalOrchestratorBar(): React.JSX.Element | null {
+  const t = useT()
   const paneStatuses = useWorkspaceStore((state) => state.paneStatuses)
   const workspaces = useWorkspaceStore((state) => state.workspaces)
   const setActiveWorkspace = useWorkspaceStore((state) => state.setActiveWorkspace)
@@ -71,27 +73,27 @@ function ApprovalOrchestratorBar(): React.JSX.Element | null {
             <div className="flex items-center gap-2 px-1.5">
               <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-400" />
               <span className="font-medium text-[var(--mtf-text)]">
-                {waitingPanes.length} ajan onay bekliyor
+                {t('approvalBar.waiting', { count: waitingPanes.length })}
               </span>
               <button
                 type="button"
                 onClick={() => setIsExpanded((value) => !value)}
                 className="ml-1 text-[var(--mtf-text-muted)] hover:text-[var(--mtf-text)]"
               >
-                {isExpanded ? '▲ gizle' : '▼ listele'}
+                {isExpanded ? t('approvalBar.hide') : t('approvalBar.show')}
               </button>
               <div className="ml-auto flex items-center gap-1">
                 <button
                   type="button"
-                  title="Hepsine Enter gönder"
+                  title={t('approvalBar.sendEnterHint')}
                   onClick={() => sendToAll('\r')}
                   className="rounded bg-amber-500/20 px-2 py-1 text-[11px] font-medium text-amber-200 hover:bg-amber-500/35"
                 >
-                  ↵ Hepsini onayla
+                  {t('approvalBar.approveAll')}
                 </button>
                 <button
                   type="button"
-                  title="Hepsine y + Enter gönder"
+                  title={t('approvalBar.sendYesHint')}
                   onClick={() => sendToAll('y\r')}
                   className="rounded bg-amber-500/20 px-2 py-1 text-[11px] font-medium text-amber-200 hover:bg-amber-500/35"
                 >
@@ -99,7 +101,7 @@ function ApprovalOrchestratorBar(): React.JSX.Element | null {
                 </button>
                 <button
                   type="button"
-                  title="Hepsine n + Enter gönder"
+                  title={t('approvalBar.sendNoHint')}
                   onClick={() => sendToAll('n\r')}
                   className="rounded bg-amber-500/20 px-2 py-1 text-[11px] font-medium text-amber-200 hover:bg-amber-500/35"
                 >

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { SysInfoSnapshot } from '@shared/types'
+import { useT } from '../hooks/useTranslation'
 
 const REFRESH_INTERVAL_MS = 2000
 
@@ -47,6 +48,7 @@ function UsageBar({ percent }: { percent: number }): React.JSX.Element {
  * örneklem çekilir (kapalıyken hiçbir polling yapılmaz — boşta CPU harcamaz).
  */
 function SystemInfoPanel(): React.JSX.Element {
+  const t = useT()
   const [isOpen, setIsOpen] = useState(false)
   const [snapshot, setSnapshot] = useState<SysInfoSnapshot | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -82,7 +84,7 @@ function SystemInfoPanel(): React.JSX.Element {
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        title="Sistem bilgisi (CPU/RAM/disk)"
+        title={t('sysInfo.title')}
         onClick={() => setIsOpen((value) => !value)}
         className={
           'rounded-md border px-2.5 py-1.5 text-xs font-medium ' +
@@ -91,12 +93,12 @@ function SystemInfoPanel(): React.JSX.Element {
             : 'border-[var(--mtf-border)] text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]')
         }
       >
-        📊 Sistem
+        {t('sysInfo.short')}
       </button>
       {isOpen && (
         <div className="absolute right-0 top-full z-50 mt-1 w-80 rounded-md border border-[var(--mtf-border)] bg-[var(--mtf-surface)] p-3 text-xs shadow-xl">
           {!snapshot ? (
-            <p className="py-4 text-center text-[var(--mtf-text-muted)]">Yükleniyor…</p>
+            <p className="py-4 text-center text-[var(--mtf-text-muted)]">{t('sysInfo.loading')}</p>
           ) : (
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
@@ -123,7 +125,7 @@ function SystemInfoPanel(): React.JSX.Element {
                     {snapshot.perCoreUsagePercent.map((core, index) => (
                       <div
                         key={index}
-                        title={`Çekirdek ${index + 1}: %${core.toFixed(0)}`}
+                        title={t('sysInfo.core', { n: index + 1, value: core.toFixed(0) })}
                         className="h-4 rounded-sm bg-[var(--mtf-surface-2)]"
                         style={{
                           background: `linear-gradient(to top, ${

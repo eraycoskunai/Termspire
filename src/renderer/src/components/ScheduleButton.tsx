@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useScheduleStore } from '../state/useScheduleStore'
+import { useT } from '../hooks/useTranslation'
 
 function cx(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(' ')
@@ -16,6 +17,7 @@ interface ScheduleButtonProps {
  * Gerçek tetikleme App.tsx'teki global ticker tarafından yapılır.
  */
 function ScheduleButton({ paneId, paneTitle }: ScheduleButtonProps): React.JSX.Element {
+  const t = useT()
   // Not: seçicinin doğrudan `.filter()` sonucu döndürmesi, her state değişiminde
   // (hatta başka bir pane'e ait olsa bile) yeni bir array referansı üretir; bu da
   // React 18'in useSyncExternalStore'unda sonsuz render döngüsüne ("Maximum
@@ -55,7 +57,7 @@ function ScheduleButton({ paneId, paneTitle }: ScheduleButtonProps): React.JSX.E
     <div ref={containerRef} className="relative" onPointerDown={(event) => event.stopPropagation()}>
       <button
         type="button"
-        title="Zamanlanmış komut ekle/görüntüle"
+        title={t('schedule.title')}
         onClick={() => setIsOpen((value) => !value)}
         className={cx(
           'rounded px-1.5 py-0.5 hover:bg-[var(--mtf-hover)]',
@@ -69,7 +71,7 @@ function ScheduleButton({ paneId, paneTitle }: ScheduleButtonProps): React.JSX.E
       {isOpen && (
         <div className="absolute right-0 top-full z-50 mt-1 w-60 rounded-md border border-[var(--mtf-border)] bg-[var(--mtf-surface)] p-2 text-xs shadow-xl">
           <p className="mb-1.5 truncate font-medium text-[var(--mtf-text)]">
-            Zamanlanmış komut — {paneTitle}
+            {t('schedule.heading', { title: paneTitle })}
           </p>
           {schedules.length > 0 && (
             <div className="mb-2 max-h-32 space-y-1 overflow-y-auto">
@@ -83,7 +85,7 @@ function ScheduleButton({ paneId, paneTitle }: ScheduleButtonProps): React.JSX.E
                   </span>
                   <button
                     type="button"
-                    title="Sil"
+                    title={t('schedule.delete')}
                     onClick={() => removeSchedule(schedule.id)}
                     className="shrink-0 text-[var(--mtf-text-muted)] hover:text-red-300"
                   >
@@ -107,7 +109,7 @@ function ScheduleButton({ paneId, paneTitle }: ScheduleButtonProps): React.JSX.E
                 onChange={(event) => setRepeatDaily(event.target.checked)}
                 className="h-3 w-3 accent-blue-500"
               />
-              Her gün
+              {t('schedule.repeatDaily')}
             </label>
           </div>
           <input
@@ -116,7 +118,7 @@ function ScheduleButton({ paneId, paneTitle }: ScheduleButtonProps): React.JSX.E
             onKeyDown={(event) => {
               if (event.key === 'Enter') handleAdd()
             }}
-            placeholder="Çalıştırılacak komut (ör. git pull)"
+            placeholder={t('schedule.commandPlaceholder')}
             className="mt-1.5 w-full rounded border border-[var(--mtf-border)] bg-[var(--mtf-bg)] px-1.5 py-1 text-[var(--mtf-text)] outline-none focus:border-blue-500"
           />
           <button
@@ -124,7 +126,7 @@ function ScheduleButton({ paneId, paneTitle }: ScheduleButtonProps): React.JSX.E
             onClick={handleAdd}
             className="mt-1.5 w-full rounded bg-blue-600 px-2 py-1 text-white hover:bg-blue-500"
           >
-            + Ekle
+            {t('schedule.add')}
           </button>
         </div>
       )}

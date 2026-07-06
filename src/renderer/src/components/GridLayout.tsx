@@ -14,6 +14,7 @@ import { useActivityStore } from '../state/useActivityStore'
 import { chunkIntoRows, computeGridDimensions } from '../lib/gridAlgorithm'
 import { markSoftClosed } from '../lib/softClosedPtys'
 import { registerPaneHandle } from '../lib/paneHandleRegistry'
+import { useT, type TFunction } from '../hooks/useTranslation'
 
 function cx(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(' ')
@@ -167,28 +168,30 @@ function GridCell({
 
 function EmptyState({
   onAddPane,
-  onAddWebPane
+  onAddWebPane,
+  t
 }: {
   onAddPane: () => void
   onAddWebPane: () => void
+  t: TFunction
 }): React.JSX.Element {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-[var(--mtf-text-muted)]">
-      <p className="text-sm">Henüz açık bir pane yok.</p>
+      <p className="text-sm">{t('grid.emptyState')}</p>
       <div className="flex gap-2">
         <button
           type="button"
           onClick={onAddPane}
           className="rounded-md bg-[var(--mtf-surface-2)] px-4 py-2 text-sm text-[var(--mtf-text)] hover:bg-[var(--mtf-hover)]"
         >
-          + Terminal ekle
+          {t('grid.addPane')}
         </button>
         <button
           type="button"
           onClick={onAddWebPane}
           className="rounded-md bg-[var(--mtf-surface-2)] px-4 py-2 text-sm text-[var(--mtf-text)] hover:bg-[var(--mtf-hover)]"
         >
-          + Web ekle
+          {t('grid.addWebPane')}
         </button>
       </div>
     </div>
@@ -198,10 +201,11 @@ function EmptyState({
 interface GlobalSearchBarProps {
   onSearch: (term: string, direction: 'next' | 'previous') => void
   onClose: () => void
+  t: TFunction
 }
 
 /** Aşama 8: aktif workspace'teki tüm pane'lerin scrollback'inde eşzamanlı arama yapan çubuk. */
-function GlobalSearchBar({ onSearch, onClose }: GlobalSearchBarProps): React.JSX.Element {
+function GlobalSearchBar({ onSearch, onClose, t }: GlobalSearchBarProps): React.JSX.Element {
   const [term, setTerm] = useState('')
 
   return (
@@ -217,12 +221,12 @@ function GlobalSearchBar({ onSearch, onClose }: GlobalSearchBarProps): React.JSX
           if (event.key === 'Enter') onSearch(term, event.shiftKey ? 'previous' : 'next')
           if (event.key === 'Escape') onClose()
         }}
-        placeholder="Tüm pane'lerde ara…"
+        placeholder={t('grid.searchPlaceholder')}
         className="w-48 rounded border border-[var(--mtf-border)] bg-[var(--mtf-bg)] px-2 py-1 text-xs text-[var(--mtf-text)] outline-none focus:border-blue-500"
       />
       <button
         type="button"
-        title="Önceki"
+        title={t('grid.searchPrevious')}
         onClick={() => onSearch(term, 'previous')}
         className="rounded px-1.5 py-1 text-xs text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]"
       >
@@ -230,7 +234,7 @@ function GlobalSearchBar({ onSearch, onClose }: GlobalSearchBarProps): React.JSX
       </button>
       <button
         type="button"
-        title="Sonraki"
+        title={t('grid.searchNext')}
         onClick={() => onSearch(term, 'next')}
         className="rounded px-1.5 py-1 text-xs text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]"
       >
@@ -238,7 +242,7 @@ function GlobalSearchBar({ onSearch, onClose }: GlobalSearchBarProps): React.JSX
       </button>
       <button
         type="button"
-        title="Kapat"
+        title={t('grid.searchClose')}
         onClick={onClose}
         className="rounded px-1.5 py-1 text-xs text-[var(--mtf-text-muted)] hover:bg-red-900/60 hover:text-red-200"
       >
@@ -261,6 +265,7 @@ interface GridLayoutProps {
  * unmount etmeden sadece CSS ile gizler.
  */
 function GridLayout({ workspaceId }: GridLayoutProps): React.JSX.Element | null {
+  const t = useT()
   const workspace = useWorkspaceStore((state) => state.workspaces[workspaceId])
   const addPane = useWorkspaceStore((state) => state.addPane)
   const addWebPane = useWorkspaceStore((state) => state.addWebPane)
@@ -346,6 +351,7 @@ function GridLayout({ workspaceId }: GridLayoutProps): React.JSX.Element | null 
         <EmptyState
           onAddPane={() => setModalOpen(true)}
           onAddWebPane={() => setWebModalOpen(true)}
+          t={t}
         />
         <PaneConfigModal
           isOpen={isModalOpen}
@@ -364,7 +370,9 @@ function GridLayout({ workspaceId }: GridLayoutProps): React.JSX.Element | null 
   return (
     <div className="flex h-full w-full">
       <div className="relative min-w-0 flex-1">
-        {isSearchOpen && <GlobalSearchBar onSearch={handleGlobalSearch} onClose={closeSearch} />}
+        {isSearchOpen && (
+          <GlobalSearchBar onSearch={handleGlobalSearch} onClose={closeSearch} t={t} />
+        )}
         <div className={cx('h-full w-full', zoomedPaneId && 'invisible')}>
           <PanelGroup orientation="vertical" className="h-full w-full gap-1">
             {rows.map((rowPanes, rowIndex) => (

@@ -4,20 +4,23 @@ import type { PaneStatus } from '../hooks/usePaneStatusEngine'
 import { getAllPtyInstanceIds } from '../lib/ptyRegistry'
 import { generateBootLines } from '../lib/hackerBootLines'
 import { playHackerBreachAlertSound } from '../lib/hackerSound'
+import { useT } from '../hooks/useTranslation'
+import type { TranslationKey } from '../lib/i18n'
+import { useUiStore } from '../state/useUiStore'
 
-const HUD_MESSAGES = [
-  'Güvenlik duvarı aşılıyor…',
-  'Kernel şifreleri kırılıyor…',
-  'Root erişimi kazanıldı.',
-  'Exploit zinciri derleniyor…',
-  'Uplink bağlantısı stabilize ediliyor…',
-  'Sızma modülü aktif.',
-  'Ajan süreçleri izleniyor…',
-  'Bellek adresleri taranıyor…',
-  'Paket enjeksiyonu tamamlandı.',
-  'Şifreleme katmanı devre dışı.',
-  'Üretim hızı kritik seviyede.',
-  'Geri dönüş yok — kodlamaya mahkumsun.'
+const HUD_MESSAGE_KEYS: TranslationKey[] = [
+  'hacker.hud.0',
+  'hacker.hud.1',
+  'hacker.hud.2',
+  'hacker.hud.3',
+  'hacker.hud.4',
+  'hacker.hud.5',
+  'hacker.hud.6',
+  'hacker.hud.7',
+  'hacker.hud.8',
+  'hacker.hud.9',
+  'hacker.hud.10',
+  'hacker.hud.11'
 ]
 
 const MATRIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#%&*+-/=<>{}[]ﾊﾋﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾘﾙﾚﾛﾜ'
@@ -59,6 +62,8 @@ const STATS_REFRESH_MS = 2500
  * etkileşimini asla bloklamaz — sadece atmosferi değiştirir.
  */
 function HackerModeOverlay(): React.JSX.Element {
+  const t = useT()
+  const language = useUiStore((state) => state.language)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const trailCanvasRef = useRef<HTMLCanvasElement>(null)
   const activatedAtRef = useRef(Date.now())
@@ -66,7 +71,10 @@ function HackerModeOverlay(): React.JSX.Element {
   const [hudIndex, setHudIndex] = useState(0)
   const [flashVisible, setFlashVisible] = useState(true)
 
-  const [bootLines] = useState(() => generateBootLines())
+  // `language` sadece bu ilk (lazy) initializer'da okunur: satırlar aktivasyon
+  // anındaki dile göre BİR KEZ üretilir, devam eden boot animasyonu ortasında
+  // dil değişse bile satırlar değişmez.
+  const [bootLines] = useState(() => generateBootLines(language))
   const [phase, setPhase] = useState<'boot' | 'live'>('boot')
   const [visibleBootLines, setVisibleBootLines] = useState(0)
 
@@ -140,11 +148,11 @@ function HackerModeOverlay(): React.JSX.Element {
     prevStatusesRef.current = paneStatuses
     if (!newlyErroredPaneId) return
     const owner = findPaneOwner(workspaces, newlyErroredPaneId)
-    setBreach({ paneTitle: owner?.pane.title ?? 'Bilinmeyen pane' })
+    setBreach({ paneTitle: owner?.pane.title ?? t('hacker.unknownPane') })
     playHackerBreachAlertSound()
     if (breachTimeoutRef.current) clearTimeout(breachTimeoutRef.current)
     breachTimeoutRef.current = setTimeout(() => setBreach(null), BREACH_ALERT_DURATION_MS)
-  }, [paneStatuses, workspaces])
+  }, [paneStatuses, workspaces, t])
 
   useEffect(() => {
     return () => {
@@ -190,7 +198,7 @@ function HackerModeOverlay(): React.JSX.Element {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setHudIndex((current) => (current + 1) % HUD_MESSAGES.length)
+      setHudIndex((current) => (current + 1) % HUD_MESSAGE_KEYS.length)
     }, 2200)
     return () => clearInterval(interval)
   }, [])
@@ -361,15 +369,19 @@ function HackerModeOverlay(): React.JSX.Element {
             (breach ? 'text-red-400' : 'text-emerald-300')
           }
         >
-          {breach ? '⚠ İHLAL TESPİT EDİLDİ ⚠' : '⚠ SALDIRI MODU AKTİF ⚠'}
+          {breach ? t('hacker.breachDetected') : t('hacker.attackModeActive')}
         </div>
         <div className="mt-1 flex items-center gap-1.5 text-emerald-400/80">
           <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
-          SÜRE: {elapsed}
+          {t('hacker.duration')}: {elapsed}
         </div>
         <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-emerald-400/70">
-          <span>PANE: {paneCount}</span>
-          <span>UYARI: {alertCount}</span>
+          <span>
+            {t('hacker.paneLabel')}: {paneCount}
+          </span>
+          <span>
+            {t('hacker.alertLabel')}: {alertCount}
+          </span>
           <span>CPU: %{stats.cpu.toFixed(0)}</span>
           <span>RAM: {(stats.memoryBytes / (1024 * 1024)).toFixed(0)} MB</span>
         </div>
@@ -379,7 +391,9 @@ function HackerModeOverlay(): React.JSX.Element {
             (breach ? 'font-semibold text-red-300' : 'text-emerald-400/70')
           }
         >
-          {breach ? `"${breach.paneTitle}" pane'inde hata tespit edildi!` : HUD_MESSAGES[hudIndex]}
+          {breach
+            ? t('hacker.breachInPane', { title: breach.paneTitle })
+            : t(HUD_MESSAGE_KEYS[hudIndex])}
         </div>
       </div>
     </div>

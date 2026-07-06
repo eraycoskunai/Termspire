@@ -5,6 +5,7 @@ import type { PaneStatus } from '../hooks/usePaneStatusEngine'
 import StatusIndicator from './StatusIndicator'
 import { getPaneHandle } from '../lib/paneHandleRegistry'
 import { markSoftClosed } from '../lib/softClosedPtys'
+import { useT, type TFunction } from '../hooks/useTranslation'
 
 function cx(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(' ')
@@ -40,6 +41,7 @@ interface WorkspaceTabProps {
   onCommitRename: () => void
   onCancelRename: () => void
   onClose: () => void
+  t: TFunction
 }
 
 /** Tek bir workspace sekmesi — cross-workspace pane sürükleme için droppable alan. */
@@ -55,7 +57,8 @@ function WorkspaceTab({
   onStartRename,
   onCommitRename,
   onCancelRename,
-  onClose
+  onClose,
+  t
 }: WorkspaceTabProps): React.JSX.Element {
   const { setNodeRef, isOver } = useDroppable({
     id: `${WORKSPACE_TAB_DROP_PREFIX}${workspace.id}`
@@ -69,9 +72,7 @@ function WorkspaceTab({
       aria-selected={isActive}
       onClick={onSelect}
       onDoubleClick={onStartRename}
-      title={
-        !isActive ? "Sürüklenen pane'i buraya bırakarak bu workspace'e taşıyabilirsiniz" : undefined
-      }
+      title={!isActive ? t('workspaceTab.dropHint') : undefined}
       className={cx(
         'group flex shrink-0 cursor-pointer items-center gap-2 rounded-t-md border-b-2 px-3 py-1.5 text-xs transition-colors',
         isActive
@@ -101,7 +102,7 @@ function WorkspaceTab({
       {canClose && (
         <button
           type="button"
-          title="Workspace'i kapat"
+          title={t('workspaceTab.close')}
           onClick={(event) => {
             event.stopPropagation()
             onClose()
@@ -121,6 +122,7 @@ function WorkspaceTab({
  * unmount edilmez (bkz. App.tsx'teki CSS tabanlı gizleme).
  */
 function WorkspaceTabBar(): React.JSX.Element {
+  const t = useT()
   const workspaceOrder = useWorkspaceStore((state) => state.workspaceOrder)
   const workspaces = useWorkspaceStore((state) => state.workspaces)
   const activeWorkspaceId = useWorkspaceStore((state) => state.activeWorkspaceId)
@@ -183,12 +185,13 @@ function WorkspaceTabBar(): React.JSX.Element {
             onCommitRename={commitRename}
             onCancelRename={() => setEditingId(null)}
             onClose={() => handleCloseWorkspace(id)}
+            t={t}
           />
         )
       })}
       <button
         type="button"
-        title="Yeni workspace"
+        title={t('workspaceTab.new')}
         onClick={() => addWorkspace()}
         className="shrink-0 rounded-md px-2 py-1 text-sm leading-none text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
       >

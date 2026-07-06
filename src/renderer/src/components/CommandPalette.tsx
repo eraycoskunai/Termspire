@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useWorkspaceStore } from '../state/useWorkspaceStore'
 import { usePresetStore } from '../state/usePresetStore'
 import { useUiStore } from '../state/useUiStore'
+import { useT } from '../hooks/useTranslation'
 import { fuzzyMatch } from '../lib/fuzzyMatch'
 import { getPtyInstanceId } from '../lib/ptyRegistry'
 import { getPaneHandle } from '../lib/paneHandleRegistry'
@@ -32,6 +33,7 @@ interface PaletteAction {
  * anda paletin bir sonraki açılışında otomatik olarak görünür.
  */
 function CommandPalette(): React.JSX.Element | null {
+  const t = useT()
   const isOpen = useUiStore((state) => state.isCommandPaletteOpen)
   const close = useUiStore((state) => state.closeCommandPalette)
 
@@ -95,10 +97,10 @@ function CommandPalette(): React.JSX.Element | null {
       list.push({
         id: `ws-jump-${workspace.id}`,
         icon: '🗂️',
-        label: `Workspace'e geç: ${workspace.name}`,
-        hint: `${workspace.order.length} pane`,
+        label: t('palette.jumpToWorkspace', { name: workspace.name }),
+        hint: t('palette.paneCountHint', { count: workspace.order.length }),
         keywords: 'workspace geç git jump',
-        group: 'Gezinme',
+        group: t('palette.groupNav'),
         onRun: () => {
           setActiveWorkspace(workspace.id)
           close()
@@ -110,23 +112,23 @@ function CommandPalette(): React.JSX.Element | null {
         list.push({
           id: `pane-jump-${pane.id}`,
           icon: pane.kind === 'web' ? '🌐' : '➡️',
-          label: `Pane'e git: ${pane.title}`,
+          label: t('palette.jumpToPane', { title: pane.title }),
           hint: workspace.name,
           keywords:
             pane.kind === 'web'
-              ? 'web tarayıcı browser git focus'
+              ? t('palette.webKeywords')
               : `${pane.config.shell} terminal git focus`,
-          group: 'Gezinme',
+          group: t('palette.groupNav'),
           onRun: () => jumpToPane(pane.id, workspace.id)
         })
         if (pane.kind !== 'web') {
           list.push({
             id: `pane-write-${pane.id}`,
             icon: '⌨️',
-            label: `${pane.title} pane'ine metin gönder…`,
+            label: t('palette.sendTextToPane', { title: pane.title }),
             hint: workspace.name,
             keywords: 'write yaz komut gönder send input',
-            group: 'Ajan aksiyonları',
+            group: t('palette.groupAgentActions'),
             onRun: () => {
               setComposeTarget({ paneId: pane.id, title: pane.title })
               setComposeText('')
@@ -135,10 +137,10 @@ function CommandPalette(): React.JSX.Element | null {
           list.push({
             id: `pane-restart-${pane.id}`,
             icon: '🔁',
-            label: `Yeniden başlat: ${pane.title}`,
+            label: t('palette.restartPane', { title: pane.title }),
             hint: workspace.name,
             keywords: 'restart yeniden başlat',
-            group: 'Ajan aksiyonları',
+            group: t('palette.groupAgentActions'),
             onRun: () => {
               restartPane(pane.id, workspace.id)
               close()
@@ -152,10 +154,10 @@ function CommandPalette(): React.JSX.Element | null {
       list.push({
         id: `preset-open-${preset.id}`,
         icon: '📦',
-        label: `Preset aç: ${preset.name}`,
-        hint: `${preset.panes.length} pane · yeni workspace`,
+        label: t('palette.openPreset', { name: preset.name }),
+        hint: t('palette.presetHint', { count: preset.panes.length }),
         keywords: 'preset aç template',
-        group: 'Presetler',
+        group: t('palette.groupPresets'),
         onRun: () => {
           const workspaceId = addWorkspace(preset.name)
           for (const pane of preset.panes) {
@@ -174,9 +176,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-new-pane',
         icon: '+',
-        label: 'Yeni terminal ekle (varsayılan shell)',
+        label: t('palette.actionNewPane'),
         keywords: 'yeni terminal ekle add new pane',
-        group: 'Aksiyonlar',
+        group: t('palette.groupActions'),
         onRun: () => {
           addPane(
             { shell: defaultShellForPlatform(window.electron.process.platform) },
@@ -190,9 +192,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-new-web-pane',
         icon: '🌐',
-        label: 'Web pane ekle (localhost:3000)',
+        label: t('palette.actionNewWebPane'),
         keywords: 'web tarayıcı browser preview önizleme localhost ekle add',
-        group: 'Aksiyonlar',
+        group: t('palette.groupActions'),
         onRun: () => {
           addWebPane('localhost:3000', undefined, undefined, activeWorkspaceId)
           close()
@@ -201,9 +203,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-new-workspace',
         icon: '🗂️',
-        label: 'Yeni workspace ekle',
+        label: t('palette.actionNewWorkspace'),
         keywords: 'yeni workspace ekle add',
-        group: 'Aksiyonlar',
+        group: t('palette.groupActions'),
         onRun: () => {
           addWorkspace()
           close()
@@ -212,9 +214,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-mission-control',
         icon: '🛰️',
-        label: 'Mission Control — tüm workspace/pane kuşbakışı',
+        label: t('palette.actionMissionControl'),
         keywords: 'mission control genel bakış overview bird eye',
-        group: 'Aksiyonlar',
+        group: t('palette.groupActions'),
         onRun: () => {
           close()
           openMissionControl()
@@ -223,9 +225,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-global-search',
         icon: '🔍',
-        label: "Tüm pane'lerde ara",
+        label: t('palette.actionGlobalSearch'),
         keywords: 'ara search find',
-        group: 'Aksiyonlar',
+        group: t('palette.groupActions'),
         onRun: () => {
           toggleSearch()
           close()
@@ -234,9 +236,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-broadcast',
         icon: '⇶',
-        label: 'Broadcast modunu aç/kapat (aktif workspace)',
+        label: t('palette.actionBroadcast'),
         keywords: 'broadcast yayın toggle',
-        group: 'Aksiyonlar',
+        group: t('palette.groupActions'),
         onRun: () => {
           toggleBroadcastMode(activeWorkspaceId)
           close()
@@ -245,9 +247,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-toggle-theme',
         icon: '🌙',
-        label: 'Koyu/açık temayı değiştir',
+        label: t('palette.actionToggleTheme'),
         keywords: 'tema theme dark light',
-        group: 'Görünüm',
+        group: t('palette.groupView'),
         onRun: () => {
           toggleTheme()
           close()
@@ -256,9 +258,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-toggle-crt',
         icon: '📺',
-        label: 'Retro CRT efektini aç/kapat',
+        label: t('palette.actionToggleCrt'),
         keywords: 'crt retro tarama efekt',
-        group: 'Görünüm',
+        group: t('palette.groupView'),
         onRun: () => {
           toggleCrtEffect()
           close()
@@ -267,9 +269,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-toggle-spotlight',
         icon: '🔦',
-        label: 'Spotlight modunu aç/kapat',
+        label: t('palette.actionToggleSpotlight'),
         keywords: 'spotlight odak dim karart',
-        group: 'Görünüm',
+        group: t('palette.groupView'),
         onRun: () => {
           toggleSpotlightMode()
           close()
@@ -278,9 +280,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-toggle-kiosk',
         icon: '⛶',
-        label: 'Sunum/Kiosk modunu aç/kapat',
+        label: t('palette.actionToggleKiosk'),
         keywords: 'kiosk sunum presentation fullscreen',
-        group: 'Görünüm',
+        group: t('palette.groupView'),
         onRun: () => {
           toggleKioskMode()
           close()
@@ -289,9 +291,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-toggle-files',
         icon: '📁',
-        label: 'Dosya panelini aç/kapat',
+        label: t('palette.actionToggleFiles'),
         keywords: 'dosya files panel explorer',
-        group: 'Görünüm',
+        group: t('palette.groupView'),
         onRun: () => {
           toggleFilesPanel()
           close()
@@ -300,9 +302,9 @@ function CommandPalette(): React.JSX.Element | null {
       {
         id: 'action-toggle-hacker-mode',
         icon: '💀',
-        label: 'Saldırı Modunu aç/kapat (Ctrl+Shift+H)',
+        label: t('palette.actionToggleHackerMode'),
         keywords: 'hacker saldırı attack matrix neon tema mod',
-        group: 'Görünüm',
+        group: t('palette.groupView'),
         onRun: () => {
           toggleHackerMode()
           close()
@@ -312,7 +314,7 @@ function CommandPalette(): React.JSX.Element | null {
 
     return list
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaces, workspaceOrder, presets, activeWorkspaceId])
+  }, [workspaces, workspaceOrder, presets, activeWorkspaceId, t])
 
   const filtered = useMemo(() => {
     if (!query.trim()) return actions.slice(0, 60)
@@ -394,7 +396,7 @@ function CommandPalette(): React.JSX.Element | null {
                   autoFocus
                   value={composeText}
                   onChange={(event) => setComposeText(event.target.value)}
-                  placeholder={`"${composeTarget.title}" pane'ine gönderilecek metin — Enter ile gönder`}
+                  placeholder={t('palette.sendPlaceholder', { title: composeTarget.title })}
                   className="min-w-0 flex-1 bg-transparent text-[var(--mtf-text)] outline-none placeholder:text-[var(--mtf-text-muted)]"
                 />
                 <button
@@ -402,7 +404,7 @@ function CommandPalette(): React.JSX.Element | null {
                   onClick={sendComposeText}
                   className="shrink-0 rounded bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-500"
                 >
-                  Gönder ↵
+                  {t('palette.send')}
                 </button>
               </div>
             ) : (
@@ -413,7 +415,7 @@ function CommandPalette(): React.JSX.Element | null {
                   autoFocus
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Bir komut yazın… (workspace, pane, preset, ayar)"
+                  placeholder={t('palette.searchPlaceholder')}
                   className="min-w-0 flex-1 bg-transparent text-[var(--mtf-text)] outline-none placeholder:text-[var(--mtf-text-muted)]"
                 />
                 <span className="shrink-0 rounded bg-[var(--mtf-surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--mtf-text-muted)]">
@@ -425,7 +427,7 @@ function CommandPalette(): React.JSX.Element | null {
               <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
                 {filtered.length === 0 && (
                   <p className="px-2 py-4 text-center text-[var(--mtf-text-muted)]">
-                    Eşleşen komut yok.
+                    {t('palette.noMatch')}
                   </p>
                 )}
                 {filtered.map((action, index) => (

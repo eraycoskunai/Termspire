@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { COLOR_SWATCHES } from '../lib/colorSwatches'
+import { useT } from '../hooks/useTranslation'
 
 export interface WebPaneModalProps {
   isOpen: boolean
@@ -14,6 +15,7 @@ const QUICK_URLS = ['localhost:3000', 'localhost:5173', 'localhost:8080', 'local
  * gibi bir sunucunun canlı çıktısını `<webview>` içinde önizleyen gömülü tarayıcı pane'i.
  */
 function WebPaneModal({ isOpen, onClose, onSubmit }: WebPaneModalProps): React.JSX.Element | null {
+  const t = useT()
   const [url, setUrl] = useState('localhost:3000')
   const [name, setName] = useState('')
   const [color, setColor] = useState('')
@@ -36,7 +38,9 @@ function WebPaneModal({ isOpen, onClose, onSubmit }: WebPaneModalProps): React.J
         className="flex w-full max-w-md flex-col gap-4 rounded-lg border border-[var(--mtf-border)] bg-[var(--mtf-surface)] p-5 text-sm text-[var(--mtf-text)] shadow-2xl"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[var(--mtf-text)]">🌐 Yeni Web Pane</h2>
+          <h2 className="text-base font-semibold text-[var(--mtf-text)]">
+            {t('webPaneModal.title')}
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -70,7 +74,9 @@ function WebPaneModal({ isOpen, onClose, onSubmit }: WebPaneModalProps): React.J
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-[var(--mtf-text-muted)]">İsim (opsiyonel)</span>
+          <span className="text-xs text-[var(--mtf-text-muted)]">
+            {t('webPaneModal.nameOptional')}
+          </span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -80,7 +86,9 @@ function WebPaneModal({ isOpen, onClose, onSubmit }: WebPaneModalProps): React.J
         </label>
 
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-[var(--mtf-text-muted)]">Renk etiketi</span>
+          <span className="text-xs text-[var(--mtf-text-muted)]">
+            {t('webPaneModal.colorLabel')}
+          </span>
           <div className="flex flex-wrap gap-2">
             {COLOR_SWATCHES.map((swatch) => (
               <button
@@ -104,13 +112,13 @@ function WebPaneModal({ isOpen, onClose, onSubmit }: WebPaneModalProps): React.J
             onClick={onClose}
             className="rounded-md border border-[var(--mtf-border)] px-3 py-1.5 text-xs text-[var(--mtf-text)] hover:bg-[var(--mtf-hover)]"
           >
-            İptal
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
             className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500"
           >
-            Oluştur
+            {t('common.create')}
           </button>
         </div>
       </form>

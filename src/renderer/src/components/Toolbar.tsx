@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { PtyCreateOptions } from '@shared/types'
 import { useWorkspaceStore } from '../state/useWorkspaceStore'
 import { useUiStore } from '../state/useUiStore'
+import { useT } from '../hooks/useTranslation'
 import PaneConfigModal from './PaneConfigModal'
 import WebPaneModal from './WebPaneModal'
 import ActivityLogButton from './ActivityLogButton'
@@ -14,6 +15,7 @@ import appLogo from '../assets/logo.png'
  * aksiyonları ve `PaneConfigModal`'ı açan "+ Terminal ekle" butonu.
  */
 function Toolbar(): React.JSX.Element {
+  const t = useT()
   const activeWorkspaceId = useWorkspaceStore((state) => state.activeWorkspaceId)
   const paneCount = useWorkspaceStore(
     (state) => state.workspaces[state.activeWorkspaceId]?.order.length ?? 0
@@ -39,6 +41,8 @@ function Toolbar(): React.JSX.Element {
   const openMissionControl = useUiStore((state) => state.openMissionControl)
   const hackerMode = useUiStore((state) => state.hackerMode)
   const toggleHackerMode = useUiStore((state) => state.toggleHackerMode)
+  const language = useUiStore((state) => state.language)
+  const toggleLanguage = useUiStore((state) => state.toggleLanguage)
   const [isModalOpen, setModalOpen] = useState(false)
   const [isWebModalOpen, setWebModalOpen] = useState(false)
 
@@ -55,28 +59,30 @@ function Toolbar(): React.JSX.Element {
   return (
     <div className="flex items-center gap-3 border-b border-[var(--mtf-border)] bg-[var(--mtf-surface)] px-3 py-2 text-sm text-[var(--mtf-text)]">
       <img src={appLogo} alt="" className="h-5 w-5 rounded-sm" draggable={false} />
-      <span className="font-semibold">Termspire</span>
-      <span className="text-xs text-[var(--mtf-text-muted)]">{paneCount} pane</span>
+      <span className="font-semibold">{t('toolbar.appName')}</span>
+      <span className="text-xs text-[var(--mtf-text-muted)]">
+        {t('toolbar.paneCount', { count: paneCount })}
+      </span>
       <div className="ml-auto flex items-center gap-1.5">
         <button
           type="button"
-          title="Komut Paleti (Ctrl+K)"
+          title={t('toolbar.commandPalette')}
           onClick={openCommandPalette}
           className="rounded-md border border-[var(--mtf-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]"
         >
-          ⌘K Komutlar
+          {t('toolbar.commandPaletteShort')}
         </button>
         <button
           type="button"
-          title="Mission Control — tüm workspace/pane kuşbakışı (Ctrl+Shift+O)"
+          title={t('toolbar.missionControlTitle')}
           onClick={openMissionControl}
           className="rounded-md border border-[var(--mtf-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]"
         >
-          🛰️ Mission Control
+          {t('toolbar.missionControlShort')}
         </button>
         <button
           type="button"
-          title="Broadcast modu: seçili pane'lere aynı anda yaz"
+          title={t('toolbar.broadcastTitle')}
           onClick={() => toggleBroadcastMode(activeWorkspaceId)}
           className={
             'rounded-md border px-2.5 py-1.5 text-xs font-medium ' +
@@ -85,11 +91,11 @@ function Toolbar(): React.JSX.Element {
               : 'border-[var(--mtf-border)] text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]')
           }
         >
-          ⇶ Broadcast
+          {t('toolbar.broadcastShort')}
         </button>
         <button
           type="button"
-          title="Tüm pane'lerde ara (Ctrl+Shift+F)"
+          title={t('toolbar.searchTitle')}
           onClick={toggleSearch}
           className={
             'rounded-md border px-2.5 py-1.5 text-xs font-medium ' +
@@ -98,14 +104,14 @@ function Toolbar(): React.JSX.Element {
               : 'border-[var(--mtf-border)] text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]')
           }
         >
-          🔍 Ara
+          {t('toolbar.searchShort')}
         </button>
         <ActivityLogButton />
         <RecentlyClosedButton />
         <SystemInfoPanel />
         <button
           type="button"
-          title="Seçili terminalin dizinini gösteren dosya paneli"
+          title={t('toolbar.filesTitle')}
           onClick={toggleFilesPanel}
           className={
             'rounded-md border px-2.5 py-1.5 text-xs font-medium ' +
@@ -114,11 +120,11 @@ function Toolbar(): React.JSX.Element {
               : 'border-[var(--mtf-border)] text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]')
           }
         >
-          📁 Dosyalar
+          {t('toolbar.filesShort')}
         </button>
         <button
           type="button"
-          title="Spotlight modu: odaklanılan pane dışındakileri karart"
+          title={t('toolbar.spotlightTitle')}
           onClick={toggleSpotlightMode}
           className={
             'rounded-md border px-2.5 py-1.5 text-xs font-medium ' +
@@ -127,11 +133,11 @@ function Toolbar(): React.JSX.Element {
               : 'border-[var(--mtf-border)] text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]')
           }
         >
-          🔦 Spotlight
+          {t('toolbar.spotlightShort')}
         </button>
         <button
           type="button"
-          title={theme === 'dark' ? 'Açık temaya geç' : 'Koyu temaya geç'}
+          title={theme === 'dark' ? t('toolbar.themeToLight') : t('toolbar.themeToDark')}
           onClick={toggleTheme}
           className="rounded-md border border-[var(--mtf-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]"
         >
@@ -139,7 +145,15 @@ function Toolbar(): React.JSX.Element {
         </button>
         <button
           type="button"
-          title="Retro CRT/tarama çizgisi efekti"
+          title={t('toolbar.languageToggle')}
+          onClick={toggleLanguage}
+          className="rounded-md border border-[var(--mtf-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]"
+        >
+          {language === 'tr' ? '🇹🇷 TR' : '🇬🇧 EN'}
+        </button>
+        <button
+          type="button"
+          title={t('toolbar.crtTitle')}
           onClick={toggleCrtEffect}
           className={
             'rounded-md border px-2.5 py-1.5 text-xs font-medium ' +
@@ -148,19 +162,19 @@ function Toolbar(): React.JSX.Element {
               : 'border-[var(--mtf-border)] text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]')
           }
         >
-          📺 CRT
+          {t('toolbar.crtShort')}
         </button>
         <button
           type="button"
-          title="Sunum/Kiosk modu (Ctrl+Shift+K / F11)"
+          title={t('toolbar.kioskTitle')}
           onClick={toggleKioskMode}
           className="rounded-md border border-[var(--mtf-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]"
         >
-          ⛶ Sunum
+          {t('toolbar.kioskShort')}
         </button>
         <button
           type="button"
-          title="Saldırı Modu: kodlama ortamını neon/hacker temasına çevirir (Ctrl+Shift+H)"
+          title={t('toolbar.hackerModeTitle')}
           onClick={toggleHackerMode}
           className={
             'rounded-md border px-2.5 py-1.5 text-xs font-bold ' +
@@ -169,21 +183,21 @@ function Toolbar(): React.JSX.Element {
               : 'border-[var(--mtf-border)] text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]')
           }
         >
-          💀 Saldırı Modu
+          {t('toolbar.hackerModeShort')}
         </button>
         <button
           type="button"
           onClick={() => setWebModalOpen(true)}
           className="rounded-md border border-[var(--mtf-border)] px-3 py-1.5 text-xs font-medium text-[var(--mtf-text)] hover:bg-[var(--mtf-hover)]"
         >
-          + Web ekle
+          {t('toolbar.addWeb')}
         </button>
         <button
           type="button"
           onClick={() => setModalOpen(true)}
           className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500"
         >
-          + Terminal ekle
+          {t('toolbar.addTerminal')}
         </button>
       </div>
       <PaneConfigModal

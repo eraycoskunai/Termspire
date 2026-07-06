@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useWorkspaceStore } from '../state/useWorkspaceStore'
 import { useUiStore } from '../state/useUiStore'
+import { useT } from '../hooks/useTranslation'
 import { getPaneHandle } from '../lib/paneHandleRegistry'
 import type { PaneStatus } from '../hooks/usePaneStatusEngine'
 
@@ -32,6 +33,7 @@ const STATUS_DOT_CLASS: Record<PaneStatus, string> = {
  * "hangi pane'de ne oluyor" sorusuna saniyeler içinde cevap verir.
  */
 function MissionControl(): React.JSX.Element | null {
+  const t = useT()
   const isOpen = useUiStore((state) => state.isMissionControlOpen)
   const close = useUiStore((state) => state.closeMissionControl)
   const workspaceOrder = useWorkspaceStore((state) => state.workspaceOrder)
@@ -84,16 +86,14 @@ function MissionControl(): React.JSX.Element | null {
           className="fixed inset-0 z-[90] flex flex-col overflow-y-auto bg-black/70 p-6 backdrop-blur-sm"
         >
           <div className="mb-4 flex shrink-0 items-center gap-3 text-white">
-            <span className="text-lg font-semibold">🛰️ Mission Control</span>
-            <span className="text-xs text-white/60">
-              Tüm workspace'ler ve pane'ler — tıkla ve git · Esc ile kapat
-            </span>
+            <span className="text-lg font-semibold">{t('missionControl.title')}</span>
+            <span className="text-xs text-white/60">{t('missionControl.subtitle')}</span>
             <button
               type="button"
               onClick={close}
               className="ml-auto rounded-md border border-white/20 px-2.5 py-1 text-xs text-white/80 hover:bg-white/10"
             >
-              ✕ Kapat
+              {t('missionControl.close')}
             </button>
           </div>
           <div
@@ -107,7 +107,9 @@ function MissionControl(): React.JSX.Element | null {
                 <div key={workspaceId}>
                   <div className="mb-1.5 flex items-center gap-2 text-xs font-medium text-white/70">
                     <span>🗂️ {workspace.name}</span>
-                    <span className="text-white/40">{workspace.order.length} pane</span>
+                    <span className="text-white/40">
+                      {t('missionControl.paneCount', { count: workspace.order.length })}
+                    </span>
                   </div>
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3">
                     {workspace.order.map((paneId) => {

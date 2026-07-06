@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { WebviewTag } from 'electron'
+import { useT } from '../hooks/useTranslation'
 
 function cx(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(' ')
@@ -51,6 +52,7 @@ function WebPane({
   dragHandleRef,
   dragHandleProps
 }: WebPaneProps): React.JSX.Element {
+  const t = useT()
   const webviewElRef = useRef<HTMLWebViewElement | null>(null)
   const [addressInput, setAddressInput] = useState(url)
   const [isLoading, setIsLoading] = useState(true)
@@ -147,13 +149,13 @@ function WebPane({
           <span className="truncate font-medium">{title}</span>
           {isLoading && (
             <span className="shrink-0 animate-pulse text-[10px] text-[var(--mtf-text-muted)]">
-              yükleniyor…
+              {t('webPane.loading')}
             </span>
           )}
         </div>
         <button
           type="button"
-          title="Sistem tarayıcısında aç"
+          title={t('webPane.openExternal')}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={handleOpenExternal}
           className="shrink-0 rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
@@ -162,7 +164,7 @@ function WebPane({
         </button>
         <button
           type="button"
-          title="Yakınlaştır/normale döndür (çift tıkla da olur)"
+          title={t('webPane.zoomHint')}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={onToggleZoom}
           className="shrink-0 rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
@@ -171,7 +173,7 @@ function WebPane({
         </button>
         <button
           type="button"
-          title="Kapat"
+          title={t('webPane.close')}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={onClose}
           className="shrink-0 rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-red-900/60 hover:text-red-200"
@@ -187,7 +189,7 @@ function WebPane({
           type="button"
           disabled={!canGoBack}
           onClick={handleBack}
-          title="Geri"
+          title={t('webPane.back')}
           className="shrink-0 rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] disabled:opacity-30 disabled:hover:bg-transparent"
         >
           ‹
@@ -196,7 +198,7 @@ function WebPane({
           type="button"
           disabled={!canGoForward}
           onClick={handleForward}
-          title="İleri"
+          title={t('webPane.forward')}
           className="shrink-0 rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] disabled:opacity-30 disabled:hover:bg-transparent"
         >
           ›
@@ -204,7 +206,7 @@ function WebPane({
         <button
           type="button"
           onClick={handleReloadOrStop}
-          title={isLoading ? 'Durdur' : 'Yenile'}
+          title={isLoading ? t('webPane.stop') : t('webPane.reload')}
           className="shrink-0 rounded px-1.5 py-0.5 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)]"
         >
           {isLoading ? '✕' : '⟳'}
@@ -213,21 +215,21 @@ function WebPane({
           value={addressInput}
           onChange={(event) => setAddressInput(event.target.value)}
           onFocus={(event) => event.target.select()}
-          placeholder="localhost:3000"
+          placeholder={t('webPane.addressPlaceholder')}
           className="min-w-0 flex-1 rounded border border-[var(--mtf-border)] bg-[var(--mtf-bg)] px-2 py-1 font-mono text-[11px] text-[var(--mtf-text)] outline-none focus:border-blue-500"
         />
       </form>
       <div className="relative min-h-0 flex-1 bg-white">
         {loadError && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[var(--mtf-bg)] p-4 text-center text-xs text-[var(--mtf-text-muted)]">
-            <span>⚠ Sayfa yüklenemedi</span>
+            <span>{t('webPane.loadFailed')}</span>
             <span className="max-w-full break-all font-mono text-[10px]">{loadError}</span>
             <button
               type="button"
               onClick={handleReloadOrStop}
               className="rounded border border-[var(--mtf-border)] px-2 py-1 hover:bg-[var(--mtf-hover)]"
             >
-              Tekrar dene
+              {t('webPane.retry')}
             </button>
           </div>
         )}

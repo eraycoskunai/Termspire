@@ -1,14 +1,25 @@
 import { create } from 'zustand'
+import type { Lang } from '../lib/i18n'
 
 export type ThemeMode = 'dark' | 'light'
 
 const THEME_STORAGE_KEY = 'mtf-theme'
 const CRT_STORAGE_KEY = 'mtf-crt-effect'
+const LANGUAGE_STORAGE_KEY = 'mtf-language'
 
 function readStoredTheme(): ThemeMode {
   if (typeof localStorage === 'undefined') return 'dark'
   const stored = localStorage.getItem(THEME_STORAGE_KEY)
   return stored === 'light' ? 'light' : 'dark'
+}
+
+/** Aşama 17: kayıtlı dil tercihi yoksa OS/tarayıcı dilinden (tr-* -> tr, aksi -> en) tahmin eder. */
+function readStoredLanguage(): Lang {
+  if (typeof localStorage === 'undefined') return 'tr'
+  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  if (stored === 'tr' || stored === 'en') return stored
+  const navigatorLang = typeof navigator !== 'undefined' ? navigator.language : 'tr'
+  return navigatorLang.toLowerCase().startsWith('tr') ? 'tr' : 'en'
 }
 
 function readStoredCrtEffect(): boolean {
@@ -58,6 +69,10 @@ interface UiStore {
    */
   hackerMode: boolean
   toggleHackerMode: () => void
+  /** Aşama 17: arayüz dili (TR/EN) — localStorage'a kalıcı, tema ile aynı desen. */
+  language: Lang
+  toggleLanguage: () => void
+  setLanguage: (lang: Lang) => void
 }
 
 const initialTheme = readStoredTheme()
@@ -102,5 +117,15 @@ export const useUiStore = create<UiStore>((set, get) => ({
     const next = !get().hackerMode
     applyHackerModeClass(next)
     set({ hackerMode: next })
+  },
+  language: readStoredLanguage(),
+  toggleLanguage: () => {
+    const next: Lang = get().language === 'tr' ? 'en' : 'tr'
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, next)
+    set({ language: next })
+  },
+  setLanguage: (lang) => {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, lang)
+    set({ language: lang })
   }
 }))

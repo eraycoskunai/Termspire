@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { FileEntry } from '@shared/types'
 import type { PaneState } from '../state/useWorkspaceStore'
 import type { ThemeMode } from '../state/useUiStore'
+import { useT, type TFunction } from '../hooks/useTranslation'
 import FileEditorPanel from './FileEditorPanel'
 
 function cx(...classes: Array<string | false | null | undefined>): string {
@@ -50,6 +51,12 @@ interface InlineCreateFormProps {
   onCancel: () => void
 }
 
+function gitBadgeTitle(directCode: string | undefined, nestedDirty: boolean, t: TFunction): string {
+  return t('fileExplorer.gitTitle', {
+    status: directCode ?? (nestedDirty ? t('fileExplorer.gitNestedChange') : '')
+  })
+}
+
 function InlineCreateForm({
   placeholder,
   onSubmit,
@@ -94,6 +101,7 @@ function FileExplorerPanel({
   theme,
   onClose
 }: FileExplorerPanelProps): React.JSX.Element {
+  const t = useT()
   const sep = platform === 'win32' ? '\\' : '/'
   const rootPath = pane?.config.cwd || homeDir || null
 
@@ -116,7 +124,7 @@ function FileExplorerPanel({
   /** Editörde kaydedilmemiş değişiklik varken dosya değiştirmeden/paneli kapatmadan önce onay ister. */
   function confirmDiscardDirtyEditor(): boolean {
     if (!isEditorDirtyRef.current) return true
-    return window.confirm('Bu dosyada kaydedilmemiş değişiklikler var. Yine de kapatılsın mı?')
+    return window.confirm(t('fileExplorer.confirmDiscardDirty'))
   }
 
   function openFileInEditor(fullPath: string, name: string): void {
@@ -193,11 +201,13 @@ function FileExplorerPanel({
   async function handleDelete(entry: FileEntry): Promise<void> {
     if (!currentPath) return
     const confirmed = window.confirm(
-      `"${entry.name}" ${entry.isDirectory ? 'klasörü (içeriğiyle birlikte)' : 'dosyası'} silinsin mi?`
+      entry.isDirectory
+        ? t('fileExplorer.confirmDeleteFolder', { name: entry.name })
+        : t('fileExplorer.confirmDeleteFile', { name: entry.name })
     )
     if (!confirmed) return
     const result = await window.api.fs.delete(currentPath, entry.name)
-    if (!result.ok) window.alert(`Silinemedi: ${result.error}`)
+    if (!result.ok) window.alert(t('fileExplorer.deleteFailed', { error: result.error ?? '' }))
     if (openFile?.path === joinPath(currentPath, entry.name)) {
       isEditorDirtyRef.current = false
       setOpenFile(null)
@@ -211,7 +221,7 @@ function FileExplorerPanel({
       kind === 'folder'
         ? await window.api.fs.createFolder(currentPath, name)
         : await window.api.fs.createFile(currentPath, name)
-    if (!result.ok) window.alert(`Oluşturulamadı: ${result.error}`)
+    if (!result.ok) window.alert(t('fileExplorer.createFailed', { error: result.error ?? '' }))
     setCreating(null)
     refresh()
   }
@@ -225,7 +235,9 @@ function FileExplorerPanel({
       .filter((path): path is string => Boolean(path))
     if (paths.length === 0) return
     const result = await window.api.fs.importPaths(currentPath, paths)
-    if (!result.ok) window.alert(`Bazı öğeler kopyalanamadı:\n${result.errors.join('\n')}`)
+    if (!result.ok) {
+      window.alert(t('fileExplorer.importFailed', { errors: result.errors.join('\n') }))
+    }
     refresh()
   }
 
@@ -243,7 +255,7 @@ function FileExplorerPanel({
     >
       <div className="flex h-full w-72 shrink-0 flex-col border-l border-[var(--mtf-border)] bg-[var(--mtf-surface)] text-xs">
         <div className="flex items-center gap-1.5 border-b border-[var(--mtf-border)] px-2 py-1.5">
-          <span className="font-medium text-[var(--mtf-text)]">📁 Dosyalar</span>
+          <span className="font-medium text-[var(--mtf-text)]">{t('fileExplorer.heading')}</span>
           {pane && (
             <span className="min-w-0 flex-1 truncate text-[var(--mtf-text-muted)]">
               · {pane.title}
@@ -251,7 +263,7 @@ function FileExplorerPanel({
           )}
           <button
             type="button"
-            title="Kapat"
+            title={t('fileExplorer.close')}
             onClick={handleClosePanel}
             className="ml-auto shrink-0 rounded px-1 text-[var(--mtf-text-muted)] hover:bg-red-900/60 hover:text-red-200"
           >
@@ -261,14 +273,14 @@ function FileExplorerPanel({
 
         {!pane || !currentPath ? (
           <div className="flex flex-1 items-center justify-center p-4 text-center text-[var(--mtf-text-muted)]">
-            Bir terminale tıklayın; dizini burada görünecek.
+            {t('fileExplorer.emptyState')}
           </div>
         ) : (
           <>
             <div className="flex items-center gap-1 border-b border-[var(--mtf-border)] px-1.5 py-1">
               <button
                 type="button"
-                title="Üst dizin"
+                title={t('fileExplorer.parentDir')}
                 disabled={pathStack.length <= 1}
                 onClick={navigateUp}
                 className="rounded px-1.5 py-1 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)] disabled:opacity-30 disabled:hover:bg-transparent"
@@ -283,7 +295,7 @@ function FileExplorerPanel({
               </span>
               <button
                 type="button"
-                title="Yenile"
+                title={t('fileExplorer.refresh')}
                 onClick={refresh}
                 className="rounded px-1.5 py-1 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
               >
@@ -291,7 +303,7 @@ function FileExplorerPanel({
               </button>
               <button
                 type="button"
-                title="OS dosya gezgininde göster"
+                title={t('fileExplorer.revealInOs')}
                 onClick={() => void window.api.fs.reveal(currentPath)}
                 className="rounded px-1.5 py-1 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
               >
@@ -301,7 +313,7 @@ function FileExplorerPanel({
             <div className="flex items-center gap-1 border-b border-[var(--mtf-border)] px-1.5 py-1">
               <button
                 type="button"
-                title="Yeni klasör"
+                title={t('fileExplorer.newFolder')}
                 onClick={() => setCreating('folder')}
                 className="rounded px-1.5 py-1 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
               >
@@ -309,14 +321,14 @@ function FileExplorerPanel({
               </button>
               <button
                 type="button"
-                title="Yeni dosya"
+                title={t('fileExplorer.newFile')}
                 onClick={() => setCreating('file')}
                 className="rounded px-1.5 py-1 text-[var(--mtf-text-muted)] hover:bg-[var(--mtf-hover)] hover:text-[var(--mtf-text)]"
               >
                 📄+
               </button>
               <span className="ml-auto text-[10px] text-[var(--mtf-text-muted)]">
-                {entries.length} öğe
+                {t('fileExplorer.itemCount', { count: entries.length })}
               </span>
             </div>
 
@@ -335,18 +347,30 @@ function FileExplorerPanel({
               {creating && (
                 <div className="px-1 py-0.5">
                   <InlineCreateForm
-                    placeholder={creating === 'folder' ? 'klasör adı' : 'dosya adı'}
+                    placeholder={
+                      creating === 'folder'
+                        ? t('fileExplorer.folderNamePlaceholder')
+                        : t('fileExplorer.fileNamePlaceholder')
+                    }
                     onSubmit={(name) => void handleCreate(creating, name)}
                     onCancel={() => setCreating(null)}
                   />
                 </div>
               )}
               {loading && entries.length === 0 && (
-                <p className="px-1.5 py-2 text-[var(--mtf-text-muted)]">Yükleniyor…</p>
+                <p className="px-1.5 py-2 text-[var(--mtf-text-muted)]">
+                  {t('fileExplorer.loading')}
+                </p>
               )}
-              {error && <p className="px-1.5 py-2 text-red-400">Hata: {error}</p>}
+              {error && (
+                <p className="px-1.5 py-2 text-red-400">
+                  {t('fileExplorer.error', { error })}
+                </p>
+              )}
               {!loading && !error && entries.length === 0 && !creating && (
-                <p className="px-1.5 py-2 text-[var(--mtf-text-muted)]">Bu dizin boş.</p>
+                <p className="px-1.5 py-2 text-[var(--mtf-text-muted)]">
+                  {t('fileExplorer.emptyDir')}
+                </p>
               )}
               {entries.map((entry) => {
                 const directCode = gitStatuses[entry.name]
@@ -367,7 +391,7 @@ function FileExplorerPanel({
                     title={
                       entry.isDirectory
                         ? entry.name
-                        : `${entry.name} — tıkla: uygulama içinde aç, çift tık: OS uygulamasıyla aç`
+                        : t('fileExplorer.openHint', { name: entry.name })
                     }
                     className={cx(
                       'group flex items-center gap-1.5 rounded px-1.5 py-1 hover:bg-[var(--mtf-hover)]',
@@ -381,7 +405,7 @@ function FileExplorerPanel({
                     </span>
                     {badge && (
                       <span
-                        title={`git: ${directCode ?? 'alt öğelerde değişiklik'}`}
+                        title={gitBadgeTitle(directCode, nestedDirty, t)}
                         className={cx(
                           'shrink-0 rounded px-1 font-mono text-[9px] font-bold',
                           badge.className
@@ -397,7 +421,7 @@ function FileExplorerPanel({
                     )}
                     <button
                       type="button"
-                      title="Sil"
+                      title={t('fileExplorer.delete')}
                       onClick={(event) => {
                         event.stopPropagation()
                         void handleDelete(entry)
@@ -411,7 +435,7 @@ function FileExplorerPanel({
               })}
               {isDraggingOver && (
                 <div className="pointer-events-none py-4 text-center text-blue-300">
-                  Bırak — bu dizine kopyalanacak
+                  {t('fileExplorer.dropHint')}
                 </div>
               )}
             </div>
