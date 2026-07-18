@@ -5,6 +5,7 @@ import { promisify } from 'util'
 import { IPC, type SysInfoDisk, type SysInfoSnapshot } from '@shared/types'
 
 const execAsync = promisify(exec)
+const DISK_CACHE_TTL_MS = 30_000
 
 /**
  * Aşama 16: sistem bilgisi paneli — CPU kullanım yüzdesi, os.cpus()'un döndürdüğü
@@ -90,11 +91,29 @@ async function readDisks(): Promise<SysInfoDisk[]> {
   }
 }
 
+let diskCache: { value: SysInfoDisk[]; expiresAt: number } | null = null
+let inFlightDiskRead: Promise<SysInfoDisk[]> | null = null
+
+async function readDisksCached(): Promise<SysInfoDisk[]> {
+  const now = Date.now()
+  if (diskCache && now < diskCache.expiresAt) return diskCache.value
+  if (inFlightDiskRead) return inFlightDiskRead
+  inFlightDiskRead = readDisks()
+    .then((value) => {
+      diskCache = { value, expiresAt: Date.now() + DISK_CACHE_TTL_MS }
+      return value
+    })
+    .finally(() => {
+      inFlightDiskRead = null
+    })
+  return inFlightDiskRead
+}
+
 export function registerSysInfoHandlers(): void {
   ipcMain.handle(IPC.SYS_INFO, async (): Promise<SysInfoSnapshot> => {
     const cpus = os.cpus()
     const { total, perCore } = computeCpuUsage(cpus)
-    const disks = await readDisks()
+    const disks = await readDisksCached()
     return {
       platform: process.platform,
       arch: process.arch,
