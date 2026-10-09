@@ -59,9 +59,10 @@ export class PtyManager {
     this.ptys.set(id, record)
 
     handle.onData((data) => {
-      this.appendCatchUp(id, data)
       if (record.attached) {
         this.getWindow()?.webContents.send(IPC.PTY_DATA, { id, data })
+      } else {
+        this.appendCatchUp(id, data)
       }
     })
 

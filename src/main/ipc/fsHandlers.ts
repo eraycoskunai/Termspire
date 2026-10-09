@@ -51,20 +51,24 @@ export function registerFsHandlers(): void {
     async (_event, dirPath: string): Promise<FsListResult | { error: string }> => {
       try {
         const items = await fs.readdir(dirPath, { withFileTypes: true })
-        const entries: FileEntry[] = []
-        for (const item of items) {
-          try {
-            const stats = await fs.stat(path.join(dirPath, item.name))
-            entries.push({
-              name: item.name,
-              isDirectory: item.isDirectory(),
-              size: stats.size,
-              modifiedAt: stats.mtimeMs
+        const entries = (
+          await Promise.all(
+            items.map(async (item): Promise<FileEntry | null> => {
+              try {
+                const stats = await fs.stat(path.join(dirPath, item.name))
+                return {
+                  name: item.name,
+                  isDirectory: item.isDirectory(),
+                  size: stats.size,
+                  modifiedAt: stats.mtimeMs
+                }
+              } catch {
+                // Erişilemeyen girdi (izin/kırık sembolik link vb.) sessizce atlanır.
+                return null
+              }
             })
-          } catch {
-            // Erişilemeyen girdi (izin/kırık sembolik link vb.) sessizce atlanır.
-          }
-        }
+          )
+        ).filter((entry): entry is FileEntry => entry !== null)
         entries.sort((a, b) => {
           if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1
           return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
