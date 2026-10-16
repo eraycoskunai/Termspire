@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "chat-launch-film": {
+      "source": "SingleGrain-Team/video-skills",
+      "sourceType": "github",
+      "skillPath": "skills/chat-launch-film/SKILL.md",
+      "computedHash": "fd2308465c85a12950a60758c90ab9cbc60888f028eb850a9f8d47bd8ab22731"
+    }
+  }
+}

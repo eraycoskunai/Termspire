@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<title>chat-launch-film</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+  body{margin:0;background:#0a0a0b;}
+  #root{position:relative;width:100%;height:100%;overflow:hidden;background:#0a0a0b;color:#f5f1ea;
+    font-family:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;}
+  .mono{font-family:monospace;}
+  .glow{position:absolute;inset:0;background:radial-gradient(ellipse 60% 55% at 50% 108%,rgba(255,107,43,.20),transparent 70%);}
+  #stage{position:absolute;inset:0;}
+  /* chat window */
+  #win{position:absolute;left:260px;top:60px;width:1400px;height:960px;background:#0e0e11;border:1px solid #26262a;
+    border-radius:26px;box-shadow:0 50px 120px -40px rgba(0,0,0,.9);overflow:hidden;}
+  .bar{position:absolute;left:0;right:0;top:0;height:68px;border-bottom:1px solid #1d1d21;display:flex;align-items:center;padding:0 28px;gap:10px;}
+  .bar i{width:13px;height:13px;border-radius:50%;background:#2a2a2e;display:block;}
+  .bar b{margin-left:18px;font-weight:600;font-size:21px;color:#a8a49b;letter-spacing:-.01em;}
+  .feed{position:absolute;left:0;right:0;top:68px;bottom:176px;overflow:hidden;
+    -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 70px);mask-image:linear-gradient(to bottom,transparent 0,#000 70px);}
+  .stack{position:absolute;left:48px;right:48px;bottom:14px;display:flex;flex-direction:column;gap:24px;}
+  .it{opacity:0;}
+  .u{align-self:flex-end;max-width:900px;background:#1a1a1c;border:1px solid #2a2a2e;border-radius:22px 22px 6px 22px;
+    padding:20px 28px;font-size:29px;line-height:1.35;letter-spacing:-.01em;}
+  .a{position:relative;max-width:1100px;font-size:29px;line-height:1.42;color:#e9e4da;letter-spacing:-.01em;}
+  .a .txt{opacity:0;}
+  .dots{position:absolute;left:0;top:16px;display:flex;gap:10px;}
+  .dots i{width:12px;height:12px;border-radius:50%;background:#a8a49b;display:block;}
+  .chip{display:inline-flex;align-items:center;gap:10px;margin-top:14px;padding:8px 18px 8px 10px;border-radius:999px;
+    background:#1a1a1c;border:1px solid #2f2f33;font-size:21px;color:#f5f1ea;}
+  .lg{display:block;flex:none;background:url(assets/logo.svg) center/cover;border-radius:10px;}
+  .chip .lg{width:30px;height:30px;border-radius:8px;}
+  .chip .ok{width:10px;height:10px;border-radius:50%;background:#ff6b2b;display:block;}
+  .tool{background:#131316;border:1px solid #2a2a2e;border-radius:20px;padding:22px 28px 24px;}
+  .th{display:flex;align-items:center;gap:14px;height:44px;}
+  .th .lg{width:40px;height:40px;}
+  .th .nm{font-size:24px;font-weight:650;letter-spacing:-.01em;}
+  .th .fn{font-size:20px;color:#a8a49b;margin-left:6px;}
+  .th .st{margin-left:auto;font-size:19px;color:#a8a49b;display:flex;align-items:center;gap:10px;}
+  .th .st i{width:10px;height:10px;border-radius:50%;background:#5f5b54;display:block;}
+  .code{margin-top:14px;background:#0a0a0b;border:1px solid #232327;border-radius:12px;padding:16px 20px;font-size:23px;min-height:30px;color:#f5f1ea;}
+  .code .p{color:#ff6b2b;}
+  .pbar{margin-top:18px;height:10px;border-radius:6px;background:#222226;overflow:hidden;}
+  .pbar i{display:block;height:100%;width:100%;background:#ff6b2b;border-radius:6px;transform-origin:0 50%;}
+  .rows{margin-top:10px;}
+  .row{display:flex;align-items:center;gap:14px;height:42px;font-size:22px;color:#cfcac0;opacity:0;}
+  .row svg{width:22px;height:22px;flex:none;}
+  .res{margin-top:14px;display:flex;align-items:center;gap:20px;background:#1a1a1c;border:1px solid #3a2a22;border-radius:16px;padding:16px 22px;opacity:0;}
+  .res .t{font-size:28px;font-weight:700;letter-spacing:-.02em;}
+  .res .s{font-size:20px;color:#a8a49b;margin-top:4px;}
+  .res .m{margin-left:auto;font-size:19px;color:#ff6b2b;font-weight:600;border:1px solid #ff6b2b66;border-radius:999px;padding:6px 16px;white-space:nowrap;}
+  /* composer */
+  .comp{position:absolute;left:48px;right:48px;bottom:34px;height:112px;background:#151518;border:1px solid #2a2a2e;border-radius:24px;
+    display:flex;align-items:center;padding:0 22px 0 32px;}
+  .typed{font-size:29px;letter-spacing:-.01em;color:#f5f1ea;white-space:pre;}
+  .ph{position:absolute;left:32px;font-size:29px;color:#74706a;}
+  .caret{display:inline-block;width:3px;height:34px;background:#ff6b2b;margin-left:3px;vertical-align:middle;}
+  .send{margin-left:auto;width:66px;height:66px;border-radius:18px;background:#ff6b2b;display:grid;place-items:center;}
+  .send svg{width:30px;height:30px;}
+  /* number takeover */
+  #hero{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;}
+  #num{font-size:430px;font-weight:800;letter-spacing:-.06em;line-height:.9;color:#f5f1ea;font-variant-numeric:tabular-nums;}
+  #num span{color:#ff6b2b;}
+  #lab{margin-top:26px;font-size:62px;font-weight:650;letter-spacing:-.03em;color:#f5f1ea;}
+  #sub{margin-top:14px;font-size:30px;color:#a8a49b;}
+  /* outro */
+  #outro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;}
+  #outro img{width:190px;height:190px;border-radius:44px;display:block;}
+  #oname{margin-top:34px;font-size:112px;font-weight:800;letter-spacing:-.045em;}
+  #otag{margin-top:12px;font-size:36px;color:#a8a49b;}
+  #ocmd{margin-top:54px;padding:22px 40px;border-radius:18px;border:1px solid #3a3a3f;background:#131316;font-size:36px;color:#f5f1ea;}
+  #ocmd span{color:#ff6b2b;}
+  #ourl{margin-top:30px;font-size:34px;font-weight:600;color:#ff6b2b;letter-spacing:-.01em;}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="36">
+  <div class="glow"></div>
+  <div id="stage">
+    <div id="win">
+      <div class="bar"><i></i><i></i><i></i><b>Assistant</b></div>
+      <div class="feed"><div class="stack" data-layout-allow-overflow>
+        <div class="it u" id="u1"></div>
+        <div class="it a" id="a1">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <div class="txt"><span id="a1t"></span><br><span class="chip"><span class="lg"></span><span id="a1c"></span><span class="ok"></span></span></div>
+        </div>
+        <div class="it tool" id="t1">
+          <div class="th"><span class="lg"></span><span class="nm" id="t1n"></span><span class="fn mono" id="t1f"></span><span class="st"><i id="t1d"></i><span id="t1s">Connecting</span></span></div>
+          <div class="pbar"><i id="t1p"></i></div>
+          <div class="rows" id="t1r"></div>
+          <div class="res" id="t1x"><div><div class="t" id="t1xt"></div><div class="s mono" id="t1xs"></div></div><div class="m" id="t1xm"></div></div>
+        </div>
+        <div class="it u" id="u2"></div>
+        <div class="it tool" id="t2">
+          <div class="th"><span class="lg"></span><span class="nm" id="t2n"></span><span class="fn mono" id="t2f"></span><span class="st"><i id="t2d"></i><span id="t2s">Running</span></span></div>
+          <div class="code mono"><span class="p">$ </span><span id="t2c"></span></div>
+          <div class="pbar"><i id="t2p"></i></div>
+          <div class="rows" id="t2r"></div>
+        </div>
+        <div class="it a" id="a2"><div class="txt" style="opacity:1" id="a2t"></div></div>
+      </div></div>
+      <div class="comp"><span class="ph" id="ph"></span><span class="typed" id="typed"></span><span class="caret" id="caret"></span>
+        <div class="send" id="send"><svg viewBox="0 0 24 24" fill="none" stroke="#0a0a0b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div></div>
+    </div>
+  </div>
+  <div id="hero"><div id="num"><span id="n0">0</span></div><div id="lab"></div><div id="sub"></div></div>
+  <div id="outro"><img src="assets/logo.svg" alt=""><div id="oname"></div><div id="otag"></div><div id="ocmd" class="mono"><span>$ </span><span id="ocmdt"></span></div><div id="ourl"></div></div>
+</div>
+<script>
+/* ---- CONFIG: swap these for a new product; keep timings in T ---- */
+const C = {
+  product: "Acme Reports",
+  ask: "Can you pull last quarter's churn numbers into a one-page summary?",
+  ack: "I can do that with Acme Reports. Connecting it now.",
+  chip: "Acme Reports connected",
+  t1fn: 'run_report("churn, last quarter")',
+  t1steps: ["Read 12 data sources", "Matched 4,310 accounts", "Built the summary"],
+  result: {title: "Q3 churn summary", sub: "1 page, 3 charts", tag: "Ready"},
+  followup: "Nice, send it to the team.",
+  t2fn: "share_report",
+  command: "acme share q3-churn --team growth",
+  t2steps: ["Exported to PDF", "Posted to #growth", "Delivered"],
+  done: "Done. <b>Q3 churn summary</b> is in #growth. I can schedule it monthly if you like.",
+  headline: 4310, headlineLabel: "accounts analysed in seconds", headlineSub: "Acme Reports",
+  tagline: "Replace with the product one-liner.", url: "acme.example"
+};
+const T = { type1:[0.9,3.9], send1:4.1, ack:5.7, t1:6.9, t1prog:[7.7,10.7], res:11.1,
+  type2:[12.9,14.4], send2:14.7, t2:15.6, code:[16.2,18.1], t2prog:[18.3,20.5], done:22.4, hero:25.4, outro:31.0 };
+
+const $ = id => document.getElementById(id);
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#ff6b2b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>';
+$("u1").textContent = C.ask; $("u2").textContent = C.followup;
+$("a1t").textContent = C.ack; $("a1c").textContent = C.chip;
+$("t1n").textContent = C.product; $("t1f").textContent = C.t1fn;
+$("t2n").textContent = C.product; $("t2f").textContent = C.t2fn;
+$("a2t").innerHTML = C.done;
+$("t1xt").textContent = C.result.title; $("t1xs").textContent = C.result.sub; $("t1xm").textContent = C.result.tag;
+$("t1r").innerHTML = C.t1steps.map(s => '<div class="row">'+CHECK+'<span>'+s+'</span></div>').join("");
+$("t2r").innerHTML = C.t2steps.map(s => '<div class="row">'+CHECK+'<span>'+s+'</span></div>').join("");
+$("lab").textContent = C.headlineLabel; $("sub").textContent = C.headlineSub;
+$("oname").textContent = C.product; $("otag").textContent = C.tagline; $("ocmdt").textContent = C.command; $("ourl").textContent = C.url;
+$("ph").textContent = "Message the assistant";
+
+const tl = gsap.timeline({ paused: true });
+const GAP = 24;
+const items = ["u1","a1","t1","u2","t2","a2"].map($);
+const H = items.map(e => e.offsetHeight + GAP);
+const below = i => H.slice(i + 1).reduce((a, b) => a + b, 0);
+const stack = document.querySelector(".stack");
+gsap.set(stack, { y: H.reduce((a, b) => a + b, 0) });
+
+function reveal(i, t, dur = 0.5) {
+  tl.to(stack, { y: below(i), duration: dur, ease: "power3.out" }, t);
+  tl.fromTo(items[i], { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: dur, ease: "power3.out" }, t);
+}
+function typeText(text, [a, b]) {
+  const o = { n: 0 };
+  tl.set($("ph"), { opacity: 0 }, a);
+  tl.to(o, { n: text.length, duration: b - a, ease: "none", onUpdate() { $("typed").textContent = text.slice(0, Math.round(o.n)); } }, a);
+}
+function send(t) {
+  tl.to($("send"), { scale: 0.86, duration: 0.1, ease: "power2.in" }, t);
+  tl.to($("send"), { scale: 1, duration: 0.25, ease: "back.out(3)" }, t + 0.1);
+  tl.add(() => { $("typed").textContent = ""; }, t + 0.12);
+  tl.set($("ph"), { opacity: 1 }, t + 0.3);
+}
+function progress(el, [a, b]) {
+  tl.fromTo(el, { scaleX: 0 }, { scaleX: 1, duration: b - a, ease: "power1.inOut" }, a);
+}
+function steps(root, a, b) {
+  const rows = root.querySelectorAll(".row"), n = rows.length;
+  rows.forEach((r, k) => tl.fromTo(r, { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" }, a + (b - a) * k / (n - 1)));
+}
+gsap.set($("n0"), { opacity: 1 });
+gsap.set([$("t1p"), $("t2p")], { scaleX: 0 });
+
+// window in
+tl.fromTo($("win"), { opacity: 0, y: 40, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "power3.out" }, 0);
+tl.to($("caret"), { opacity: 0, duration: 0.45, ease: "steps(1)", repeat: 60, yoyo: true }, 0.2);
+
+// turn 1: ask
+typeText(C.ask, T.type1); send(T.send1); reveal(0, T.send1 + 0.15);
+reveal(1, T.send1 + 0.8);
+tl.fromTo(document.querySelectorAll("#a1 .dots i"), { y: 0 }, { y: -9, duration: 0.3, stagger: 0.12, repeat: 3, yoyo: true, ease: "sine.inOut" }, T.send1 + 1.0);
+tl.to("#a1 .dots", { opacity: 0, duration: 0.25 }, T.ack - 0.1);
+tl.to("#a1 .txt", { opacity: 1, duration: 0.5, ease: "power2.out" }, T.ack);
+
+// tool call 1: connect + search
+reveal(2, T.t1);
+tl.add(() => { $("t1s").textContent = "Connecting"; }, T.t1);
+tl.to($("t1d"), { backgroundColor: "#ff6b2b", duration: 0.2 }, T.t1 + 0.7);
+tl.add(() => { $("t1s").textContent = "Searching"; }, T.t1 + 0.7);
+progress($("t1p"), T.t1prog);
+steps($("t1r"), 8.2, 10.2);
+tl.add(() => { $("t1s").textContent = "Done"; }, T.t1prog[1]);
+tl.fromTo($("t1x"), { opacity: 0, y: 18, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "power3.out" }, T.res);
+tl.fromTo($("t1x"), { borderColor: "#3a2a22" }, { borderColor: "#ff6b2b", duration: 0.5 }, T.res + 0.2);
+
+// turn 2: follow-up
+typeText(C.followup, T.type2); send(T.send2); reveal(3, T.send2 + 0.15);
+
+// tool call 2: install
+reveal(4, T.t2);
+tl.to($("t2d"), { backgroundColor: "#ff6b2b", duration: 0.2 }, T.t2 + 0.4);
+const oc = { n: 0 };
+tl.to(oc, { n: C.command.length, duration: T.code[1] - T.code[0], ease: "none", onUpdate() { $("t2c").textContent = C.command.slice(0, Math.round(oc.n)); } }, T.code[0]);
+progress($("t2p"), T.t2prog);
+steps($("t2r"), 18.7, 20.3);
+tl.add(() => { $("t2s").textContent = "Installed"; }, T.t2prog[1]);
+
+// final reply
+reveal(5, T.done);
+
+// headline takeover
+tl.to($("stage"), { scale: 0.94, opacity: 0, duration: 0.7, ease: "power2.inOut" }, T.hero - 0.2);
+tl.fromTo($("hero"), { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" }, T.hero + 0.2);
+const hn = { n: 0 };
+tl.to(hn, { n: C.headline, duration: 2.2, ease: "power2.out", onUpdate() { $("n0").textContent = Math.round(hn.n); } }, T.hero + 0.4);
+tl.fromTo([$("lab"), $("sub")], { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.15, ease: "power3.out" }, T.hero + 1.4);
+tl.fromTo($("num"), { scale: 1 }, { scale: 1.05, duration: 0.35, ease: "power2.out", yoyo: true, repeat: 1 }, T.hero + 2.6);
+
+// outro
+tl.to($("hero"), { opacity: 0, y: -40, duration: 0.5, ease: "power2.in" }, T.outro - 0.2);
+tl.fromTo("#outro > *", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.12, ease: "power3.out" }, T.outro + 0.2);
+tl.set("#outro", { opacity: 1 }, T.outro);
+
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>
